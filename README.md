@@ -1,2 +1,1 @@
-
-following [RayTracingInOneWeekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html#overview)
+following [RayTracingInOneWeekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html#movingcameracodeintoitsownclass)
