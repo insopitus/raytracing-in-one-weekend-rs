@@ -1,3 +1,43 @@
+use std::{f32::INFINITY, fs::File, io::BufWriter};
+
+use image::ImageError;
+use indicatif::ProgressBar;
+use lib_rs::{
+    color::{self, rgba, Color}, geometry::Sphere, linear_algebra::{
+        vector::{dot, vec3},
+        Vector3,
+    }, ray::{HitRecord, Hitable, Ray}
+};
+use rand::Rng;
+
+pub fn random_vec3(rng: &mut rand::rngs::ThreadRng) -> Vector3 {
+    vec3(rng.gen_range(-1.0..=1.0), rng.gen_range(-1.0..=1.0), rng.gen_range(-1.0..=1.0))
+}
+// pub fn random_vec3_in_unit_sphere(rng:&mut rand::rngs::ThreadRng)->Vector3{
+//    loop {
+//         let p = random_vec3(rng);
+//         if p.length_squared() < 1.0{
+//             return p;
+
+//         }
+//     }
+// }
+pub fn random_vec3_min_max(rng: &mut rand::rngs::ThreadRng, min: f32, max: f32) -> Vector3 {
+    vec3(
+        rng.gen_range(min..max),
+        rng.gen_range(min..max),
+        rng.gen_range(min..max),
+    )
+}
+pub fn random_vec3_on_semisphere(rng: &mut rand::rngs::ThreadRng, normal: Vector3) -> Vector3 {
+    let dir = random_vec3(rng).normalize();
+    if dot(dir, normal) >= 0.0 {
+        dir
+    } else {
+        -dir
+    }
+}
+
 #[derive(Debug)]
 pub struct Camera {
     aspect_ratio: f32,
@@ -16,10 +56,11 @@ impl Camera {
         let frame_height = 720;
         let center = Vector3::ZERO;
         // near plane
-        let viewport_size = (2.0*aspect_ratio, 2.0);
+        let viewport_size = (2.0 * aspect_ratio, 2.0);
         let pixel_size = 2.0 / frame_height as f32;
-        let viewport_top_left =
-            center + vec3(0.0, 0.0, -1.0) + vec3(-viewport_size.0 / 2.0, viewport_size.1 / 2.0, 0.0);
+        let viewport_top_left = center
+            + vec3(0.0, 0.0, -1.0)
+            + vec3(-viewport_size.0 / 2.0, viewport_size.1 / 2.0, 0.0);
         let pixel_delta_u = vec3(pixel_size, 0.0, 0.0);
         let pixel_delta_v = vec3(0.0, -pixel_size, 0.0);
         let pixel_0_loc = viewport_top_left + 0.5 * (pixel_delta_u + pixel_delta_v);
@@ -33,10 +74,19 @@ impl Camera {
             viewport_size,
         }
     }
-    pub fn get_ray_at(&self, u: u32, v: u32) -> Ray {
-        let dir =
-            self.pixel_0_loc + (u as f32) * self.pixel_delta_u + (v as f32) * self.pixel_delta_v
-                - self.center;
+    pub fn get_ray_at(&self, u: u32, v: u32, rng: &mut rand::rngs::ThreadRng) -> Ray {
+        // let dir =
+        //     self.pixel_0_loc + (u as f32) * self.pixel_delta_u + (v as f32) * self.pixel_delta_v
+        //         - self.center;
+        // randomized version (multisample anti-alias)
+        use rand::Rng;
+        let rand_x = rng.gen::<f32>() - 0.5;
+        let rand_y = rng.gen::<f32>() - 0.5;
+        let dir = self.pixel_0_loc
+            + (u as f32 + rand_x) * self.pixel_delta_u
+            + (v as f32 + rand_y) * self.pixel_delta_v
+            - self.center;
+
         Ray {
             origin: self.center,
             direction: dir.normalize(),
@@ -44,17 +94,8 @@ impl Camera {
     }
 }
 
-use std::{fs::File, io::BufWriter};
-
-use image::ImageError;
-use indicatif::ProgressBar;
-use lib_rs::{
-    color::{rgba, Color},
-    linear_algebra::{vector::vec3, Vector3},
-    ray::{HitRecord, Hitable, Ray},
-};
 pub struct Scene {
-    geometries: Vec<Box<dyn Hitable>>,
+    geometries: Vec<Sphere>,
 }
 
 impl Scene {
@@ -63,18 +104,14 @@ impl Scene {
     }
     pub fn ray_cast(&self, ray: Ray) -> Option<HitRecord> {
         let mut iter = self.geometries.iter();
-        loop {
-            if let Some(s) = iter.next() {
-                if let Some(r) = ray.hit(s, 0.0, 5.0) {
-                    return Some(r);
-                };
-            } else {
-                break;
-            }
+        while let Some(s) = iter.next() {
+            if let Some(r) = ray.hit(s, 0.0, INFINITY) {
+                return Some(r);
+            };
         }
-        return None;
+        None
     }
-    pub fn add(&mut self,g:Box<dyn Hitable>){
+    pub fn add(&mut self, g: Sphere) {
         self.geometries.push(g);
     }
 }
@@ -82,32 +119,47 @@ impl Scene {
 pub struct Renderer<'a> {
     camera: &'a Camera,
     scene: &'a Scene,
+    light_direction: Vector3,
 }
 impl<'a> Renderer<'a> {
     pub fn new(camera: &'a Camera, scene: &'a Scene) -> Self {
-        Self { camera, scene }
+        Self {
+            camera,
+            scene,
+            light_direction: vec3(1.0, 1.0, 1.0).normalize(),
+        }
+    }
+    pub fn ray_color(&self, ray: Ray, rng: &mut rand::rngs::ThreadRng) -> Color {
+        let record: Option<HitRecord> = self.scene.ray_cast(ray);
+
+        if let Some(record) = record {
+            // let n = record.normal;
+            // rgba(n.x+1.0,n.y+1.0,n.z+1.0,2.0)*0.5
+            let dir = random_vec3_on_semisphere(rng, record.normal);
+            (self.ray_color(Ray::new(ray.origin, dir), rng) * 0.5f32).set_a(1.0)
+        } else {
+            let d = ray.direction;
+            let a = 0.5 * (d.y + 1.0);
+            rgba(1.0, 1.0, 1.0, 1.0) * (1.0 - a) + rgba(0.5, 0.7, 1.0, 1.0) * a
+        }
     }
     pub fn render(&self) -> Result<(), ImageError> {
         let mut pixels =
             Vec::with_capacity((self.camera.frame_size.0 * self.camera.frame_size.1) as usize);
         let bar = ProgressBar::new(pixels.capacity() as u64);
+        let mut rng = rand::thread_rng();
+        const SAMPLES: usize = 16;
         for j in 0..self.camera.frame_size.1 {
             for i in 0..self.camera.frame_size.0 {
-                let ray = self.camera.get_ray_at(i, j);
-                let d = self.scene.ray_cast(ray);
+                let mut accu_color = rgba(0.0, 0.0, 0.0, 1.0);
+                for _ in 0..SAMPLES {
+                    let ray = self.camera.get_ray_at(i, j, &mut rng);
+                    let color = self.ray_color(ray, &mut rng);
+                    accu_color += color;
+                }
+                accu_color /= SAMPLES as f32;
 
-                let color = if let Some(r) = d {
-                    rgba(
-                        r.normal.x * 0.5 + 0.5,
-                        r.normal.y * 0.5 + 0.5,
-                        r.normal.z * 0.5 + 0.5,
-                        1.0,
-                    )
-                } else {
-                    rgba(1.0, 1.0, 1.0, 1.0)
-                };
-
-                pixels.push(color);
+                pixels.push(accu_color);
                 bar.inc(1);
             }
         }

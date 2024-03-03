@@ -9,3 +9,4 @@ edition = "2021"
 image = {version = "0.24.9"}
 indicatif = "0.17.8"
 lib-rs = {path = "../lib-rs"}
+rand = "0.8.5"
