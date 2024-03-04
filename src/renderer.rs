@@ -3,7 +3,7 @@ use std::{f32::INFINITY, fs::File, io::BufWriter};
 use image::ImageError;
 use indicatif::ProgressBar;
 use lib_rs::{
-    color::{self, rgba, Color}, geometry::Sphere, linear_algebra::{
+    color::{self, mix, rgba, Color}, geometry::Sphere, linear_algebra::{
         vector::{dot, vec3},
         Vector3,
     }, ray::{HitRecord, Hitable, Ray}
@@ -105,7 +105,7 @@ impl Scene {
     pub fn ray_cast(&self, ray: Ray) -> Option<HitRecord> {
         let mut iter = self.geometries.iter();
         while let Some(s) = iter.next() {
-            if let Some(r) = ray.hit(s, 0.0, INFINITY) {
+            if let Some(r) = ray.hit(*s, 0.001..INFINITY) {
                 return Some(r);
             };
         }
@@ -136,11 +136,11 @@ impl<'a> Renderer<'a> {
             // let n = record.normal;
             // rgba(n.x+1.0,n.y+1.0,n.z+1.0,2.0)*0.5
             let dir = random_vec3_on_semisphere(rng, record.normal);
-            (self.ray_color(Ray::new(ray.origin, dir), rng) * 0.5f32).set_a(1.0)
+            (self.ray_color(Ray::new(record.point, dir), rng) * 0.5f32).set_a(1.0)
         } else {
             let d = ray.direction;
             let a = 0.5 * (d.y + 1.0);
-            rgba(1.0, 1.0, 1.0, 1.0) * (1.0 - a) + rgba(0.5, 0.7, 1.0, 1.0) * a
+            mix(rgba(1.0, 1.0, 1.0, 1.0),rgba(0.5, 0.7, 1.0, 1.0),a)
         }
     }
     pub fn render(&self) -> Result<(), ImageError> {
@@ -148,7 +148,7 @@ impl<'a> Renderer<'a> {
             Vec::with_capacity((self.camera.frame_size.0 * self.camera.frame_size.1) as usize);
         let bar = ProgressBar::new(pixels.capacity() as u64);
         let mut rng = rand::thread_rng();
-        const SAMPLES: usize = 16;
+        const SAMPLES: usize = 12;
         for j in 0..self.camera.frame_size.1 {
             for i in 0..self.camera.frame_size.0 {
                 let mut accu_color = rgba(0.0, 0.0, 0.0, 1.0);
