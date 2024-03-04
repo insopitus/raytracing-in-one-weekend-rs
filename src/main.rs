@@ -6,7 +6,7 @@ use lib_rs::{
     linear_algebra::{vector::vec3, Vector3},
     ray::Ray,
 };
-use renderer::{Renderer, Scene};
+use renderer::{Material, MaterialKind, Renderer, Scene};
 
 use crate::renderer::Camera;
 mod renderer;
@@ -21,8 +21,21 @@ fn main() {
     let sphere2 = Sphere::new(vec3(0.0, -100.5, -1.0), 100.0);
     // let mut geometries = vec![sphere];
     let mut scene = Scene::new();
-    scene.add(sphere1);
-    scene.add(sphere2);
-    let renderer = Renderer::new(&camera,&scene);
+
+    scene.add(
+        sphere1,
+        Material {
+            kind: MaterialKind::Lambertian,
+            color: rgba(1.0, 1.0, 0.0, 1.0),
+        },
+    );
+    scene.add(
+        sphere2,
+        Material {
+            kind: MaterialKind::Lambertian,
+            color: rgba(0.3, 0.3, 0.3, 1.0),
+        },
+    );
+    let renderer = Renderer::new(&camera, &scene);
     renderer.render();
 }

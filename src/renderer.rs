@@ -3,15 +3,22 @@ use std::{f32::INFINITY, fs::File, io::BufWriter};
 use image::ImageError;
 use indicatif::ProgressBar;
 use lib_rs::{
-    color::{self, rgba, Color}, geometry::Sphere, linear_algebra::{
+    color::{self, mix, rgba, Color},
+    geometry::Sphere,
+    linear_algebra::{
         vector::{dot, vec3},
         Vector3,
-    }, ray::{HitRecord, Hitable, Ray}
+    },
+    ray::{HitRecord, Hitable, Ray},
 };
 use rand::Rng;
 
 pub fn random_vec3(rng: &mut rand::rngs::ThreadRng) -> Vector3 {
-    vec3(rng.gen_range(-1.0..=1.0), rng.gen_range(-1.0..=1.0), rng.gen_range(-1.0..=1.0))
+    vec3(
+        rng.gen_range(-1.0..=1.0),
+        rng.gen_range(-1.0..=1.0),
+        rng.gen_range(-1.0..=1.0),
+    )
 }
 // pub fn random_vec3_in_unit_sphere(rng:&mut rand::rngs::ThreadRng)->Vector3{
 //    loop {
@@ -95,24 +102,24 @@ impl Camera {
 }
 
 pub struct Scene {
-    geometries: Vec<Sphere>,
+    entities: Vec<(Sphere, Material)>,
 }
 
 impl Scene {
     pub fn new() -> Self {
-        Self { geometries: vec![] }
+        Self { entities: vec![] }
     }
-    pub fn ray_cast(&self, ray: Ray) -> Option<HitRecord> {
-        let mut iter = self.geometries.iter();
-        while let Some(s) = iter.next() {
-            if let Some(r) = ray.hit(s, 0.0, INFINITY) {
-                return Some(r);
+    pub fn ray_cast(&self, ray: Ray) -> Option<(HitRecord, Material)> {
+        let mut iter = self.entities.iter();
+        while let Some((s, m)) = iter.next() {
+            if let Some(r) = ray.hit(*s, 0.001, INFINITY) {
+                return Some((r, *m));
             };
         }
         None
     }
-    pub fn add(&mut self, g: Sphere) {
-        self.geometries.push(g);
+    pub fn add(&mut self, g: Sphere, m: Material) {
+        self.entities.push((g, m));
     }
 }
 
@@ -129,18 +136,26 @@ impl<'a> Renderer<'a> {
             light_direction: vec3(1.0, 1.0, 1.0).normalize(),
         }
     }
-    pub fn ray_color(&self, ray: Ray, rng: &mut rand::rngs::ThreadRng) -> Color {
-        let record: Option<HitRecord> = self.scene.ray_cast(ray);
-
-        if let Some(record) = record {
+    pub fn ray_color(&self, ray: Ray, max_depth: u32, rng: &mut rand::rngs::ThreadRng) -> Color {
+        if max_depth == 0 {
+            return rgba(0.0, 0.0, 0.0, 1.0);
+        }
+        if let Some((record, material)) = self.scene.ray_cast(ray) {
+            let (scatter, ray_out, attenuation) = material.scatter(&ray, &record, rng);
             // let n = record.normal;
             // rgba(n.x+1.0,n.y+1.0,n.z+1.0,2.0)*0.5
-            let dir = random_vec3_on_semisphere(rng, record.normal);
-            (self.ray_color(Ray::new(ray.origin, dir), rng) * 0.5f32).set_a(1.0)
+            let mut color = if scatter {
+                self.ray_color(ray_out, max_depth, rng) * attenuation
+            } else {
+                rgba(0.0, 0.0, 0.0, 1.0)
+            };
+
+            color.a = 1.0;
+            color
         } else {
             let d = ray.direction;
             let a = 0.5 * (d.y + 1.0);
-            rgba(1.0, 1.0, 1.0, 1.0) * (1.0 - a) + rgba(0.5, 0.7, 1.0, 1.0) * a
+            mix(rgba(1.0, 1.0, 1.0, 1.0), rgba(0.5, 0.7, 1.0, 1.0), a)
         }
     }
     pub fn render(&self) -> Result<(), ImageError> {
@@ -154,7 +169,7 @@ impl<'a> Renderer<'a> {
                 let mut accu_color = rgba(0.0, 0.0, 0.0, 1.0);
                 for _ in 0..SAMPLES {
                     let ray = self.camera.get_ray_at(i, j, &mut rng);
-                    let color = self.ray_color(ray, &mut rng);
+                    let color = self.ray_color(ray, 10, &mut rng);
                     accu_color += color;
                 }
                 accu_color /= SAMPLES as f32;
@@ -167,7 +182,7 @@ impl<'a> Renderer<'a> {
 
         let mut buffer: Vec<u8> = Vec::with_capacity(pixels.len() * 4);
         for c in pixels {
-            buffer.extend_from_slice(&c.as_rgba8_bytes());
+            buffer.extend_from_slice(&c.linear_to_gamma(2.2).as_rgba8_bytes());
         }
         let mut writer = BufWriter::new(File::create("output.png").unwrap());
         image::write_buffer_with_format(
@@ -180,5 +195,51 @@ impl<'a> Renderer<'a> {
         )
         .unwrap();
         Ok(())
+    }
+}
+
+#[derive(Clone, Copy)]
+pub enum MaterialKind {
+    Lambertian,
+    Metal,
+}
+impl MaterialKind {
+    pub fn scatter(
+        &self,
+        ray_in: &Ray,
+        hit_record: &HitRecord,
+        rng: &mut rand::rngs::ThreadRng,
+    ) -> (bool, Ray) {
+        let dir = match self {
+            MaterialKind::Lambertian => {
+                (hit_record.normal + random_vec3(rng).normalize()).normalize()
+            }
+            MaterialKind::Metal => ray_in.direction.reflect(hit_record.normal).normalize(),
+        };
+        (true, Ray::new(hit_record.point, dir))
+    }
+}
+#[derive(Clone, Copy)]
+pub struct Material {
+    pub kind: MaterialKind,
+    pub color: Color,
+}
+impl Material {
+    pub fn scatter(
+        &self,
+        ray_in: &Ray,
+        hit_record: &HitRecord,
+        rng: &mut rand::rngs::ThreadRng,
+    ) -> (bool, Ray, Color) {
+        let (scatter, mut ray_out) = self.kind.scatter(ray_in, hit_record, rng);
+        let ray_out_dir = ray_out.direction;
+        let epsilon = 1e-8;
+        if ray_out_dir.x.abs() < epsilon
+            && ray_out_dir.y.abs() < epsilon
+            && ray_out_dir.z.abs() < epsilon
+        {
+            ray_out.direction = hit_record.normal;
+        }
+        (scatter, ray_out, self.color)
     }
 }
