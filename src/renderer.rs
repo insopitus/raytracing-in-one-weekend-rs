@@ -162,17 +162,21 @@ impl<'a> Renderer<'a> {
         let mut pixels =
             Vec::with_capacity((self.camera.frame_size.0 * self.camera.frame_size.1) as usize);
         let bar = ProgressBar::new(pixels.capacity() as u64);
-        let mut rng = rand::thread_rng();
-        const SAMPLES: usize = 16;
+        const SAMPLES: usize = 12;
+        use rayon::prelude::*;
         for j in 0..self.camera.frame_size.1 {
             for i in 0..self.camera.frame_size.0 {
                 let mut accu_color = rgba(0.0, 0.0, 0.0, 1.0);
-                for _ in 0..SAMPLES {
-                    let ray = self.camera.get_ray_at(i, j, &mut rng);
-                    let color = self.ray_color(ray, 10, &mut rng);
-                    accu_color += color;
-                }
-                accu_color /= SAMPLES as f32;
+                let accu_color: Color = (0..SAMPLES)
+                    .into_par_iter()
+                    .map(|_| {
+                        let mut rng = rand::thread_rng();
+                        let ray = self.camera.get_ray_at(i, j, &mut rng);
+                        let color = self.ray_color(ray, 10, &mut rng);
+                        color
+                    })
+                    .sum::<Color>()
+                    / SAMPLES as f32;
 
                 pixels.push(accu_color);
                 bar.inc(1);

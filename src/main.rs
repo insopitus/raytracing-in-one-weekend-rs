@@ -17,23 +17,38 @@ const HEIGHT: u32 = 720;
 fn main() {
     let bar = indicatif::ProgressBar::new((WIDTH * HEIGHT) as u64);
     let camera = Camera::new();
-    let sphere1 = Sphere::new(vec3(0.0, 0.0, -1.0), 0.5);
-    let sphere2 = Sphere::new(vec3(0.0, -100.5, -1.0), 100.0);
+    // let sphere1 = Sphere::new(vec3(0.0, 0.0, -1.0), 0.5);
+    // let sphere1 = Sphere::new(vec3(0.0, -100.5, -1.0), 100.0);
     // let mut geometries = vec![sphere];
     let mut scene = Scene::new();
 
     scene.add(
-        sphere1,
+        Sphere::new(vec3(0.0, 0.0, -1.0), 0.5),
         Material {
             kind: MaterialKind::Lambertian,
-            color: rgba(1.0, 1.0, 0.0, 1.0),
+            color: rgba(0.7, 0.3, 0.3, 1.0),
         },
     );
     scene.add(
-        sphere2,
+        Sphere::new(vec3(-1.0, 0.0, -1.0), 0.5),
+        Material {
+            kind: MaterialKind::Metal,
+            color: rgba(0.8, 0.8, 0.8, 1.0),
+        },
+    );
+    scene.add(
+        Sphere::new(vec3(1.0, 0.0, -1.0), 0.5),
+        Material {
+            kind: MaterialKind::Metal,
+            color: rgba(0.8, 0.6, 0.2, 1.0),
+        },
+    );
+    // ground needs to be added last; ray only hit one target
+    scene.add(
+        Sphere::new(vec3(0.0, -100.5, -1.0), 100.0),
         Material {
             kind: MaterialKind::Lambertian,
-            color: rgba(0.3, 0.3, 0.3, 1.0),
+            color: rgba(0.8, 0.8, 0.0, 1.0),
         },
     );
     let renderer = Renderer::new(&camera, &scene);
