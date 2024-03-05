@@ -106,7 +106,7 @@ impl Camera {
 }
 
 pub struct Scene {
-    entities: Vec<(Sphere, Material)>,
+    entities: Vec<(Box<dyn Hitable>, Material)>,
 }
 
 impl Scene {
@@ -116,13 +116,13 @@ impl Scene {
     pub fn ray_cast(&self, ray: Ray) -> Option<(HitRecord, Material)> {
         let mut iter = self.entities.iter();
         while let Some((s, m)) = iter.next() {
-            if let Some(r) = ray.hit(*s, 0.001..INFINITY) {
+            if let Some(r) = ray.hit(s, 0.001..INFINITY) {
                 return Some((r, *m));
             };
         }
         None
     }
-    pub fn add(&mut self, g: Sphere, m: Material) {
+    pub fn add(&mut self, g: Box<dyn Hitable>, m: Material) {
         self.entities.push((g, m));
     }
 }
@@ -166,12 +166,12 @@ impl<'a> Renderer<'a> {
         let mut pixels =
             Vec::with_capacity((self.camera.frame_size.0 * self.camera.frame_size.1) as usize);
         let bar = ProgressBar::new(pixels.capacity() as u64);
-        const SAMPLES: usize = 128;
+        const SAMPLES: usize = 16;
         use rayon::prelude::*;
         for j in 0..self.camera.frame_size.1 {
             for i in 0..self.camera.frame_size.0 {
                 let accu_color: Color = (0..SAMPLES)
-                    .into_par_iter()
+                    .into_iter()
                     .map(|_| {
                         let mut rng = rand::thread_rng();
                         let ray = self.camera.get_ray_at(i, j, &mut rng);

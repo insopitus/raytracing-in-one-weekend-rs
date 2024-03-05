@@ -7,7 +7,7 @@ use std::{
 
 use lib_rs::{
     color::{rgba, Color},
-    geometry::{self, Sphere},
+    geometry::{self, AxisAlignedBox, Sphere},
     linear_algebra::{vector::vec3, Vector3},
     ray::Ray,
 };
@@ -28,29 +28,33 @@ fn main() {
     let mut scene = Scene::new();
 
     scene.add(
-        Sphere::new(vec3(0.0, 0.0, -1.0), 0.5),
+        Box::new(Sphere::new(vec3(0.0, 0.0, -1.0), 0.5)),
         Material {
             kind: MaterialKind::Lambertian,
             color: rgba(0.7, 0.3, 0.3, 1.0),
         },
     );
     scene.add(
-        Sphere::new(vec3(-1.0, 0.0, -1.0), 0.5),
+        Box::new(Sphere::new(vec3(-1.0, 0.0, -1.0), 0.5)),
         Material {
             kind: MaterialKind::Metal,
             color: rgba(0.8, 0.8, 0.8, 1.0),
         },
     );
-    scene.add(
-        Sphere::new(vec3(1.0, 0.0, -1.0), 0.5),
-        Material {
-            kind: MaterialKind::Metal,
-            color: rgba(0.8, 0.6, 0.2, 1.0),
-        },
-    );
+    // scene.add(
+    //     Sphere::new(vec3(1.0, 0.0, -1.0), 0.5),
+    //     Material {
+    //         kind: MaterialKind::Metal,
+    //         color: rgba(0.8, 0.6, 0.2, 1.0),
+    //     },
+    // );
+    scene.add(Box::new(AxisAlignedBox::new(vec3(0.6,-0.2,-1.2),vec3(1.0,0.2,-0.8))),Material{
+        kind:MaterialKind::Lambertian,
+        color:rgba(0.8, 0.6, 0.2, 1.0)
+    });
     // ground needs to be added last; ray only hit one target
     scene.add(
-        Sphere::new(vec3(0.0, -100.5, -1.0), 100.0),
+        Box::new(Sphere::new(vec3(0.0, -100.5, -1.0), 100.0)),
         Material {
             kind: MaterialKind::Lambertian,
             color: rgba(0.8, 0.8, 0.0, 1.0),
