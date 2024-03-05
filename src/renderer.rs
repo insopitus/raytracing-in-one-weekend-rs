@@ -1,4 +1,8 @@
-use std::{f32::INFINITY, fs::File, io::BufWriter};
+use std::{
+    f32::INFINITY,
+    fs::File,
+    io::{self, BufWriter},
+};
 
 use image::ImageError;
 use indicatif::ProgressBar;
@@ -158,15 +162,14 @@ impl<'a> Renderer<'a> {
             mix(rgba(1.0, 1.0, 1.0, 1.0), rgba(0.5, 0.7, 1.0, 1.0), a)
         }
     }
-    pub fn render(&self) -> Result<(), ImageError> {
+    pub fn render(&self) -> Vec<Color> {
         let mut pixels =
             Vec::with_capacity((self.camera.frame_size.0 * self.camera.frame_size.1) as usize);
         let bar = ProgressBar::new(pixels.capacity() as u64);
-        const SAMPLES: usize = 12;
+        const SAMPLES: usize = 128;
         use rayon::prelude::*;
         for j in 0..self.camera.frame_size.1 {
             for i in 0..self.camera.frame_size.0 {
-                let mut accu_color = rgba(0.0, 0.0, 0.0, 1.0);
                 let accu_color: Color = (0..SAMPLES)
                     .into_par_iter()
                     .map(|_| {
@@ -184,11 +187,14 @@ impl<'a> Renderer<'a> {
         }
         bar.finish();
 
+        pixels
+    }
+    pub fn write(&self, pixels: &Vec<Color>, mut writer: impl io::Write + io::Seek) {
         let mut buffer: Vec<u8> = Vec::with_capacity(pixels.len() * 4);
         for c in pixels {
             buffer.extend_from_slice(&c.linear_to_gamma(2.2).as_rgba8_bytes());
         }
-        let mut writer = BufWriter::new(File::create("output.png").unwrap());
+        // let mut writer = BufWriter::new(File::create("output.png").unwrap());
         image::write_buffer_with_format(
             &mut writer,
             &buffer,
@@ -198,7 +204,6 @@ impl<'a> Renderer<'a> {
             image::ImageFormat::Png,
         )
         .unwrap();
-        Ok(())
     }
 }
 

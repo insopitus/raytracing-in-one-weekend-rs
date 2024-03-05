@@ -1,4 +1,9 @@
-use std::{thread, time::Duration};
+use std::{
+    fs::File,
+    io::BufWriter,
+    thread,
+    time::{Duration, Instant},
+};
 
 use lib_rs::{
     color::{rgba, Color},
@@ -52,5 +57,9 @@ fn main() {
         },
     );
     let renderer = Renderer::new(&camera, &scene);
-    renderer.render();
+    let time = Instant::now();
+    let pixels = renderer.render();
+    println!("Time {} secs.", time.elapsed().as_secs_f32());
+    let writer = BufWriter::new(File::create("output.png").unwrap());
+    renderer.write(&pixels, writer);
 }
