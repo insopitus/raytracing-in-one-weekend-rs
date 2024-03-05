@@ -112,7 +112,7 @@ impl Scene {
     pub fn ray_cast(&self, ray: Ray) -> Option<(HitRecord, Material)> {
         let mut iter = self.entities.iter();
         while let Some((s, m)) = iter.next() {
-            if let Some(r) = ray.hit(*s, 0.001, INFINITY) {
+            if let Some(r) = ray.hit(*s, 0.001..INFINITY) {
                 return Some((r, *m));
             };
         }
