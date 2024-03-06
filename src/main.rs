@@ -20,7 +20,7 @@ const WIDTH: u32 = 1280;
 const HEIGHT: u32 = 720;
 
 fn main() {
-    let bar = indicatif::ProgressBar::new((WIDTH * HEIGHT) as u64);
+    // let bar = indicatif::ProgressBar::new((WIDTH * HEIGHT) as u64);
     let camera = Camera::new();
     // let sphere1 = Sphere::new(vec3(0.0, 0.0, -1.0), 0.5);
     // let sphere1 = Sphere::new(vec3(0.0, -100.5, -1.0), 100.0);
@@ -37,21 +37,29 @@ fn main() {
     scene.add(
         Box::new(Sphere::new(vec3(-1.0, 0.0, -1.0), 0.5)),
         Material {
-            kind: MaterialKind::Metal,
+            kind: MaterialKind::Metal { fuzz: 0.2 },
             color: rgba(0.8, 0.8, 0.8, 1.0),
         },
     );
+    scene.add(
+        Box::new(Sphere::new(vec3(1.0, 0.0, -1.0), 0.5)),
+        Material {
+            kind: MaterialKind::Dielectric {
+                index_of_refraction: 1.5,
+            },
+            color: rgba(0.8, 0.6, 0.2, 1.0),
+        },
+    );
     // scene.add(
-    //     Sphere::new(vec3(1.0, 0.0, -1.0), 0.5),
+    //     Box::new(AxisAlignedBox::new(
+    //         vec3(0.6, -0.4, -1.2),
+    //         vec3(1.0, -0.2, -0.8),
+    //     )),
     //     Material {
-    //         kind: MaterialKind::Metal,
+    //         kind: MaterialKind::Lambertian,
     //         color: rgba(0.8, 0.6, 0.2, 1.0),
     //     },
     // );
-    scene.add(Box::new(AxisAlignedBox::new(vec3(0.6,-0.2,-1.2),vec3(1.0,0.2,-0.8))),Material{
-        kind:MaterialKind::Lambertian,
-        color:rgba(0.8, 0.6, 0.2, 1.0)
-    });
     // ground needs to be added last; ray only hit one target
     scene.add(
         Box::new(Sphere::new(vec3(0.0, -100.5, -1.0), 100.0)),

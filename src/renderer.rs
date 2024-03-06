@@ -63,8 +63,8 @@ pub struct Camera {
 impl Camera {
     pub fn new() -> Self {
         let aspect_ratio = 16.0 / 9.0;
-        let frame_width = 1280;
-        let frame_height = 720;
+        let frame_width = 320;
+        let frame_height = 180;
         let center = Vector3::ZERO;
         // near plane
         let viewport_size = (2.0 * aspect_ratio, 2.0);
@@ -145,13 +145,20 @@ impl<'a> Renderer<'a> {
             return rgba(0.0, 0.0, 0.0, 1.0);
         }
         if let Some((record, material)) = self.scene.ray_cast(ray) {
-            let (scatter, ray_out, attenuation) = material.scatter(&ray, &record, rng);
-            // let n = record.normal;
-            // rgba(n.x+1.0,n.y+1.0,n.z+1.0,2.0)*0.5
-            let mut color = if scatter {
-                self.ray_color(ray_out, max_depth, rng) * attenuation
+            let debug_normal = false;
+            let mut color = if debug_normal {
+                let n = record.normal;
+                rgba(n.x, n.y, n.z, 1.0)
             } else {
-                rgba(0.0, 0.0, 0.0, 1.0)
+                let (scatter, ray_out, attenuation) = material.scatter(&ray, &record, rng);
+                // let n = record.normal;
+                // rgba(n.x+1.0,n.y+1.0,n.z+1.0,2.0)*0.5
+                let mut color = if scatter {
+                    self.ray_color(ray_out, max_depth, rng) * attenuation
+                } else {
+                    rgba(0.0, 0.0, 0.0, 1.0)
+                };
+                color
             };
 
             color.a = 1.0;
@@ -210,7 +217,8 @@ impl<'a> Renderer<'a> {
 #[derive(Clone, Copy)]
 pub enum MaterialKind {
     Lambertian,
-    Metal,
+    Metal { fuzz: f32 },
+    Dielectric { index_of_refraction: f32 },
 }
 impl MaterialKind {
     pub fn scatter(
@@ -219,13 +227,32 @@ impl MaterialKind {
         hit_record: &HitRecord,
         rng: &mut rand::rngs::ThreadRng,
     ) -> (bool, Ray) {
-        let dir = match self {
-            MaterialKind::Lambertian => {
-                (hit_record.normal + random_vec3(rng).normalize()).normalize()
+        let (scattered, dir) = match self {
+            MaterialKind::Lambertian => (
+                true,
+                (hit_record.normal + random_vec3(rng).normalize()).normalize(),
+            ),
+            MaterialKind::Metal { fuzz } => {
+                let reflected = ray_in.direction.reflect(hit_record.normal).normalize();
+                let dir = (reflected + *fuzz * random_vec3(rng)).normalize();
+                let scattered = dot(dir, hit_record.normal) > 0.0;
+                (scattered, dir)
             }
-            MaterialKind::Metal => ray_in.direction.reflect(hit_record.normal).normalize(),
+            MaterialKind::Dielectric {
+                index_of_refraction,
+            } => {
+                let refraction_ratio = if hit_record.front_face {
+                    1.0 / index_of_refraction
+                } else {
+                    *index_of_refraction
+                };
+                let refracted = ray_in
+                    .direction
+                    .refract(hit_record.normal, refraction_ratio);
+                (true, refracted)
+            }
         };
-        (true, Ray::new(hit_record.point, dir))
+        (scattered, Ray::new(hit_record.point, dir))
     }
 }
 #[derive(Clone, Copy)]
