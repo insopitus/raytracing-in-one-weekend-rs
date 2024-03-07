@@ -214,6 +214,13 @@ impl<'a> Renderer<'a> {
     }
 }
 
+fn reflectance(cosine: f32, ref_idx: f32) -> f32 {
+    // Use Schlick's approximation for reflectance.
+    let mut r0 = (1. - ref_idx) / (1. + ref_idx);
+    r0 = r0 * r0;
+    r0 + (1. - r0) * (1. - cosine).powf(5.0)
+}
+
 #[derive(Clone, Copy)]
 pub enum MaterialKind {
     Lambertian,
@@ -246,10 +253,19 @@ impl MaterialKind {
                 } else {
                     *index_of_refraction
                 };
-                let refracted = ray_in
-                    .direction
-                    .refract(hit_record.normal, refraction_ratio);
-                (true, refracted)
+                let cos_theta = dot(-ray_in.direction, hit_record.normal).min(1.0);
+                let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+                let direction = if refraction_ratio * sin_theta > 1.0
+                    || reflectance(cos_theta, refraction_ratio) > rng.gen()
+                {
+                    ray_in.direction.reflect(hit_record.normal)
+                } else {
+                    ray_in
+                        .direction
+                        .refract(hit_record.normal, refraction_ratio)
+                };
+
+                (true, direction.normalize())
             }
         };
         (scattered, Ray::new(hit_record.point, dir))

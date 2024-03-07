@@ -42,12 +42,12 @@ fn main() {
         },
     );
     scene.add(
-        Box::new(Sphere::new(vec3(1.0, 0.0, -1.0), 0.5)),
+        Box::new(Sphere::new(vec3(1.0, 0.0, -1.0), -0.5)),
         Material {
             kind: MaterialKind::Dielectric {
                 index_of_refraction: 1.5,
             },
-            color: rgba(0.8, 0.6, 0.2, 1.0),
+            color: rgba(1., 1., 1., 1.0),
         },
     );
     // scene.add(
