@@ -61,14 +61,12 @@ pub struct Camera {
     viewport_size: (f32, f32),
 }
 impl Camera {
-    pub fn new() -> Self {
-        let aspect_ratio = 16.0 / 9.0;
-        let frame_width = 320;
-        let frame_height = 180;
+    pub fn new(width: u32, height: u32) -> Self {
+        let aspect_ratio = width as f32 / height as f32;
         let center = Vector3::ZERO;
         // near plane
         let viewport_size = (2.0 * aspect_ratio, 2.0);
-        let pixel_size = 2.0 / frame_height as f32;
+        let pixel_size = 2.0 / height as f32;
         let viewport_top_left = center
             + vec3(0.0, 0.0, -1.0)
             + vec3(-viewport_size.0 / 2.0, viewport_size.1 / 2.0, 0.0);
@@ -77,7 +75,7 @@ impl Camera {
         let pixel_0_loc = viewport_top_left + 0.5 * (pixel_delta_u + pixel_delta_v);
         Self {
             aspect_ratio,
-            frame_size: (frame_width, frame_height),
+            frame_size: (width, height),
             center,
             pixel_0_loc,
             pixel_delta_u,
@@ -106,7 +104,7 @@ impl Camera {
 }
 
 pub struct Scene {
-    entities: Vec<(Box<dyn Hitable>, Material)>,
+    entities: Vec<(Box<dyn Hitable + Sync>, Material)>,
 }
 
 impl Scene {
@@ -122,21 +120,23 @@ impl Scene {
         }
         None
     }
-    pub fn add(&mut self, g: Box<dyn Hitable>, m: Material) {
-        self.entities.push((g, m));
+    pub fn add(&mut self, g: impl Hitable + 'static + Sync, m: Material) {
+        self.entities.push((Box::new(g), m));
     }
 }
 
 pub struct Renderer<'a> {
     camera: &'a Camera,
     scene: &'a Scene,
+    samples: u32,
     light_direction: Vector3,
 }
 impl<'a> Renderer<'a> {
-    pub fn new(camera: &'a Camera, scene: &'a Scene) -> Self {
+    pub fn new(camera: &'a Camera, scene: &'a Scene, samples: u32) -> Self {
         Self {
             camera,
             scene,
+            samples,
             light_direction: vec3(1.0, 1.0, 1.0).normalize(),
         }
     }
@@ -145,20 +145,19 @@ impl<'a> Renderer<'a> {
             return rgba(0.0, 0.0, 0.0, 1.0);
         }
         if let Some((record, material)) = self.scene.ray_cast(ray) {
-            let debug_normal = false;
-            let mut color = if debug_normal {
+            const DEBUG_NORMAL: bool = false;
+            let mut color = if DEBUG_NORMAL {
                 let n = record.normal;
                 rgba(n.x, n.y, n.z, 1.0)
             } else {
                 let (scatter, ray_out, attenuation) = material.scatter(&ray, &record, rng);
                 // let n = record.normal;
                 // rgba(n.x+1.0,n.y+1.0,n.z+1.0,2.0)*0.5
-                let mut color = if scatter {
+                if scatter {
                     self.ray_color(ray_out, max_depth, rng) * attenuation
                 } else {
                     rgba(0.0, 0.0, 0.0, 1.0)
-                };
-                color
+                }
             };
 
             color.a = 1.0;
@@ -173,12 +172,12 @@ impl<'a> Renderer<'a> {
         let mut pixels =
             Vec::with_capacity((self.camera.frame_size.0 * self.camera.frame_size.1) as usize);
         let bar = ProgressBar::new(pixels.capacity() as u64);
-        const SAMPLES: usize = 16;
         use rayon::prelude::*;
+
         for j in 0..self.camera.frame_size.1 {
             for i in 0..self.camera.frame_size.0 {
-                let accu_color: Color = (0..SAMPLES)
-                    .into_iter()
+                let accu_color: Color = (0..self.samples)
+                    .into_par_iter()
                     .map(|_| {
                         let mut rng = rand::thread_rng();
                         let ray = self.camera.get_ray_at(i, j, &mut rng);
@@ -186,7 +185,7 @@ impl<'a> Renderer<'a> {
                         color
                     })
                     .sum::<Color>()
-                    / SAMPLES as f32;
+                    / self.samples as f32;
 
                 pixels.push(accu_color);
                 bar.inc(1);
@@ -216,8 +215,8 @@ impl<'a> Renderer<'a> {
 
 fn reflectance(cosine: f32, ref_idx: f32) -> f32 {
     // Use Schlick's approximation for reflectance.
-    let mut r0 = (1. - ref_idx) / (1. + ref_idx);
-    r0 = r0 * r0;
+    let r0 = (1. - ref_idx) / (1. + ref_idx);
+    let r0 = r0 * r0;
     r0 + (1. - r0) * (1. - cosine).powf(5.0)
 }
 
@@ -225,7 +224,7 @@ fn reflectance(cosine: f32, ref_idx: f32) -> f32 {
 pub enum MaterialKind {
     Lambertian,
     Metal { fuzz: f32 },
-    Dielectric { index_of_refraction: f32 },
+    Dielectric { fraction_rate: f32 },
 }
 impl MaterialKind {
     pub fn scatter(
@@ -245,13 +244,11 @@ impl MaterialKind {
                 let scattered = dot(dir, hit_record.normal) > 0.0;
                 (scattered, dir)
             }
-            MaterialKind::Dielectric {
-                index_of_refraction,
-            } => {
+            MaterialKind::Dielectric { fraction_rate } => {
                 let refraction_ratio = if hit_record.front_face {
-                    1.0 / index_of_refraction
+                    1.0 / fraction_rate
                 } else {
-                    *index_of_refraction
+                    *fraction_rate
                 };
                 let cos_theta = dot(-ray_in.direction, hit_record.normal).min(1.0);
                 let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
