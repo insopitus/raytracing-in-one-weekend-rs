@@ -2,3 +2,5 @@ following [RayTracingInOneWeekend](https://raytracing.github.io/books/RayTracing
 
 result:
 ![](output.png)_
+
+The lower part of the glass cube looks weird, but I don't know why.
