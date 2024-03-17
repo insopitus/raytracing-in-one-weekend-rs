@@ -6,15 +6,16 @@ use std::{
 };
 
 use lib_rs::{
-    color::{rgba, Color},
+    color::{rgba},
     geometry::{self, AxisAlignedBox, Sphere},
-    linear_algebra::{vector::vec3, Vector3},
-    ray::Ray,
+    linear_algebra::{vector::vec3,},
 };
 use renderer::{Material, MaterialKind, Renderer, Scene};
 
-use crate::renderer::Camera;
+use crate::camera::Camera;
+
 mod renderer;
+mod camera;
 
 
 
