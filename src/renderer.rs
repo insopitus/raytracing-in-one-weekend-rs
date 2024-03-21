@@ -17,7 +17,7 @@ use lib_rs::{
 };
 use rand::Rng;
 
-use crate::camera::Camera;
+use crate::{camera::Camera, scene::Scene};
 
 pub fn random_vec3(rng: &mut rand::rngs::ThreadRng) -> Vector3 {
     vec3(
@@ -48,29 +48,6 @@ pub fn random_vec3_on_semisphere(rng: &mut rand::rngs::ThreadRng, normal: Vector
         dir
     } else {
         -dir
-    }
-}
-
-
-pub struct Scene {
-    entities: Vec<(Box<dyn Hitable + Sync>, Material)>,
-}
-
-impl Scene {
-    pub fn new() -> Self {
-        Self { entities: vec![] }
-    }
-    pub fn ray_cast(&self, ray: Ray) -> Option<(HitRecord, Material)> {
-        let mut iter = self.entities.iter();
-        while let Some((s, m)) = iter.next() {
-            if let Some(r) = ray.hit(s, 0.001..INFINITY) {
-                return Some((r, *m));
-            };
-        }
-        None
-    }
-    pub fn add(&mut self, g: impl Hitable + 'static + Sync, m: Material) {
-        self.entities.push((Box::new(g), m));
     }
 }
 

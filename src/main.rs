@@ -6,24 +6,23 @@ use std::{
 };
 
 use lib_rs::{
-    color::{rgba},
+    color::rgba,
     geometry::{self, AxisAlignedBox, Sphere},
-    linear_algebra::{vector::vec3,},
+    linear_algebra::vector::vec3,
 };
-use renderer::{Material, MaterialKind, Renderer, Scene};
+use renderer::{Material, MaterialKind, Renderer};
 
-use crate::camera::Camera;
+use crate::{camera::Camera, scene::Scene};
 
-mod renderer;
 mod camera;
-
-
+mod renderer;
+mod scene;
 
 fn main() {
     // let bar = indicatif::ProgressBar::new((WIDTH * HEIGHT) as u64);
     let mut camera = Camera::new(1280, 760);
-    camera.move_to(vec3(0.8,0.4,0.4));
-    camera.look_at(vec3(0.0,0.0,-0.5));
+    camera.move_to(vec3(0.8, 0.4, 0.4));
+    camera.look_at(vec3(0.0, 0.0, -0.5));
     // let sphere1 = Sphere::new(vec3(0.0, 0.0, -1.0), 0.5);
     // let sphere1 = Sphere::new(vec3(0.0, -100.5, -1.0), 100.0);
     // let mut geometries = vec![sphere];
@@ -57,10 +56,7 @@ fn main() {
     // );
 
     scene.add(
-        AxisAlignedBox::new(
-            vec3(0.4, -0.2, -0.8),
-            vec3(0.8, 0.2, -0.4),
-        ),
+        AxisAlignedBox::new(vec3(0.4, -0.2, -0.8), vec3(0.8, 0.2, -0.4)),
         Material {
             kind: MaterialKind::Dielectric { fraction_rate: 1.5 },
             color: rgba(1.0, 1.0, 1.0, 1.0),
