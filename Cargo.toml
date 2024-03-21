@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-image = {version = "0.24.9"}
+image = { version = "0.24.9" }
 indicatif = "0.17.8"
-lib-rs = {path = "../lib-rs"}
+lib-rs = { path = "./lib-rs" }
 rand = "0.8.5"
 rayon = "1.9.0"
