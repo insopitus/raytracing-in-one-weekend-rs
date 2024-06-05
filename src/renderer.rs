@@ -56,6 +56,7 @@ pub struct Renderer<'a> {
     scene: &'a Scene,
     samples: u32,
     light_direction: Vector3,
+    background:Color
 }
 impl<'a> Renderer<'a> {
     pub fn new(camera: &'a Camera, scene: &'a Scene, samples: u32) -> Self {
@@ -64,6 +65,7 @@ impl<'a> Renderer<'a> {
             scene,
             samples,
             light_direction: vec3(1.0, 1.0, 1.0).normalize(),
+            background:Color::BLACK
         }
     }
     pub fn ray_color(&self, ray: Ray, max_depth: u32, rng: &mut rand::rngs::ThreadRng) -> Color {
@@ -76,22 +78,24 @@ impl<'a> Renderer<'a> {
                 let n = record.normal;
                 rgba(n.x, n.y, n.z, 1.0)
             } else {
+                // color from scatter
                 let (scatter, ray_out, attenuation) = material.scatter(&ray, &record, rng);
+                // color from emmision
+                let emmision_color = material.emit();
                 // let n = record.normal;
                 // rgba(n.x+1.0,n.y+1.0,n.z+1.0,2.0)*0.5
-                if scatter {
+                let scatter_color = if scatter {
                     self.ray_color(ray_out, max_depth, rng) * attenuation
                 } else {
                     rgba(0.0, 0.0, 0.0, 1.0)
-                }
+                };
+                scatter_color + emmision_color
             };
 
             color.a = 1.0;
             color
         } else {
-            let d = ray.direction;
-            let a = 0.5 * (d.y + 1.0);
-            mix(rgba(1.0, 1.0, 1.0, 1.0), rgba(0.5, 0.7, 1.0, 1.0), a)
+            Color::BLACK
         }
     }
     pub fn render(&self) -> Vec<Color> {
@@ -151,6 +155,7 @@ pub enum MaterialKind {
     Lambertian,
     Metal { fuzz: f32 },
     Dielectric { fraction_rate: f32 },
+    DiffuseLight,
 }
 impl MaterialKind {
     pub fn scatter(
@@ -190,8 +195,17 @@ impl MaterialKind {
 
                 (true, direction.normalize())
             }
+            MaterialKind::DiffuseLight =>(false,ray_in.direction),
         };
         (scattered, Ray::new(hit_record.point, dir))
+    }
+    pub fn emit(&self)->Color{
+        match self{
+            MaterialKind::DiffuseLight => todo!(),
+            _=>{
+                rgba(0.0, 0.0, 0.0, 1.0)
+            }
+        }
     }
 }
 #[derive(Clone, Copy)]
@@ -216,5 +230,9 @@ impl Material {
             ray_out.direction = hit_record.normal;
         }
         (scatter, ray_out, self.color)
+    }
+    pub fn emit(&self)->Color{
+
+        rgba(0.0, 0.0, 0.0, 1.0)
     }
 }

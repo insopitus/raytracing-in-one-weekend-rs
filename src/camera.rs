@@ -9,7 +9,9 @@ pub struct Camera {
     frame_size: (u32, u32),
     position: Vector3,
     pixel_delta_u: Vector3,
+    /// distance per pixel on v axis
     pixel_delta_v: Vector3,
+    /// center of the top left pixel
     pixel_0_loc: Vector3,
     // vertical field of view in degrees
     fov:f32,
@@ -49,13 +51,13 @@ impl Camera {
         // up direction of the frame in 3d space;
         let up = cross(dir, left);
         const NEAR:f32 = 1.0;
-        let viewport_height = NEAR* (fov*0.5/180.0*PI).tan();
-        dbg!(viewport_height);
+        let viewport_height = 2.0*NEAR* (fov*0.5/180.0*PI).tan();
         let viewport_size = (viewport_height * aspect_ratio, viewport_height);
-        let pixel_size = viewport_height / (frame_size.1 as f32);
-        let viewport_top_left = center + dir + viewport_size.0/2.0 * left + viewport_size.1/2.0 * up;
-        let pixel_delta_u = pixel_size * -left;
+        let pixel_size = viewport_height / (frame_size.1 as f32);// distance per pixel
+        let viewport_top_left = center + dir*NEAR + viewport_size.0/2.0 * left + viewport_size.1/2.0 * up;
+        let pixel_delta_u = pixel_size * -left; 
         let pixel_delta_v = pixel_size * -up;
+        // center of the top left pixel
         let pixel_0_loc = viewport_top_left + 0.5 * (pixel_delta_u + pixel_delta_v);
         (pixel_0_loc, pixel_delta_u, pixel_delta_v, viewport_size)
     }
