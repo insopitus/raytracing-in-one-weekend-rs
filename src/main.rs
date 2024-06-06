@@ -88,17 +88,17 @@ mod scene;
 
 fn main() {
     // let bar = indicatif::ProgressBar::new((WIDTH * HEIGHT) as u64);
-    let mut camera = Camera::new(640, 380, 80.0);
-    camera.move_to(vec3(0.0, 0.0, 9.0));
-    camera.look_at(vec3(0.0, 0.0, 0.0));
+    let mut camera = Camera::new(320, 320, 40.0);
+    camera.move_to(vec3(278.0, 278.0, -800.0));
+    camera.look_at(vec3(278.0, 278.0, 0.0));
     // let sphere1 = Sphere::new(vec3(0.0, 0.0, -1.0), 0.5);
     // let sphere1 = Sphere::new(vec3(0.0, -100.5, -1.0), 100.0);
     // let mut geometries = vec![sphere];
     let mut scene = Scene::new();
 
-    simple_light_scene(&mut scene);
+    cornell_box(&mut scene);
 
-    let renderer = Renderer::new(&camera, &scene, 50);
+    let renderer = Renderer::new(&camera, &scene, 100);
     let time = Instant::now();
     let pixels = renderer.render();
     println!("Time {} secs.", time.elapsed().as_secs_f32());
@@ -106,11 +106,69 @@ fn main() {
     renderer.write(&pixels, writer);
 }
 
+fn cornell_box(scene: &mut Scene) {
+    let white = Material{
+        kind:MaterialKind::Lambertian,
+        color:rgba(0.73, 0.73, 0.73, 1.0)
+    };
+    let red = Material{
+        kind:MaterialKind::Lambertian,
+        color:rgba(0.65, 0.05, 0.05, 1.0)
+    };
+    let green = Material{
+        kind:MaterialKind::Lambertian,
+        color:rgba(0.12, 0.45, 0.15, 1.0)
+    };
+    let light = Material{
+        kind:MaterialKind::DiffuseLight,
+        color:rgba(15., 15., 15., 1.0)
+    };
+    scene.add(
+        Parallelogram::new(vec3(555.,0.,0.),vec3(0.,555.,0.),vec3(0.,0.,555.)),
+        green,
+    );
+    scene.add(
+        Parallelogram::new(vec3(0.,0.,0.),vec3(0.,555.,0.),vec3(0.,0.,555.)),
+        red,
+    );
+    scene.add(
+        Parallelogram::new(vec3(343.,544.,332.),vec3(-130.,0.,0.),vec3(0.,0.,-105.)),
+        light,
+    );
+    scene.add(
+        Parallelogram::new(vec3(0.,0.,0.),vec3(555.,0.,0.),vec3(0.,0.,555.)),
+        white,
+    );
+    scene.add(
+        Parallelogram::new(vec3(555.,555.,555.),vec3(-555.,0.,0.),vec3(0.,0.,-555.)),
+        white,
+    );
+    scene.add(
+        Parallelogram::new(vec3(0.,0.,555.),vec3(555.,0.,0.),vec3(0.,555.,0.)),
+        white,
+    );
+    
+}
+
 fn simple_light_scene(scene: &mut Scene) {
     scene.add(
         Sphere::new(vec3(0.0, -1000.0, 0.0), 1000.0),
         Material {
             kind: MaterialKind::Lambertian,
+            color: Color::WHITE,
+        },
+    );
+    scene.add(
+        Sphere::new(vec3(0.0, 2.0, 0.0), 2.0),
+        Material {
+            kind: MaterialKind::Lambertian,
+            color: Color::WHITE,
+        },
+    );
+    scene.add(
+        Sphere::new(vec3(0.0, 7.0, 0.0), 1.0),
+        Material {
+            kind: MaterialKind::DiffuseLight,
             color: Color::WHITE,
         },
     );

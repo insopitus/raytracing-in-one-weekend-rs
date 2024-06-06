@@ -199,9 +199,9 @@ impl MaterialKind {
         };
         (scattered, Ray::new(hit_record.point, dir))
     }
-    pub fn emit(&self)->Color{
+    pub fn emit(&self, color:Color)->Color{
         match self{
-            MaterialKind::DiffuseLight => todo!(),
+            MaterialKind::DiffuseLight => color,
             _=>{
                 rgba(0.0, 0.0, 0.0, 1.0)
             }
@@ -233,6 +233,6 @@ impl Material {
     }
     pub fn emit(&self)->Color{
 
-        rgba(0.0, 0.0, 0.0, 1.0)
+        self.kind.emit(self.color)
     }
 }
