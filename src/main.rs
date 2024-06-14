@@ -98,7 +98,7 @@ fn main() {
 
     cornell_box(&mut scene);
 
-    let renderer = Renderer::new(&camera, &scene, 100);
+    let renderer = Renderer::new(&camera, &scene, 1000);
     let time = Instant::now();
     let pixels = renderer.render();
     println!("Time {} secs.", time.elapsed().as_secs_f32());
@@ -145,6 +145,15 @@ fn cornell_box(scene: &mut Scene) {
     );
     scene.add(
         Parallelogram::new(vec3(0.,0.,555.),vec3(555.,0.,0.),vec3(0.,555.,0.)),
+        white,
+    );
+
+    scene.add(
+        AxisAlignedBox::new(vec3(130., 0., 65.), vec3(295., 165., 230.)),
+        white,
+    );
+    scene.add(
+        AxisAlignedBox::new(vec3(265., 0., 295.), vec3(430., 330., 460.)),
         white,
     );
     
