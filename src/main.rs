@@ -98,7 +98,7 @@ fn main() {
 
     cornell_box(&mut scene);
 
-    let renderer = Renderer::new(&camera, &scene, 1000);
+    let renderer = Renderer::new(&camera, &scene, 100000);
     let time = Instant::now();
     let pixels = renderer.render();
     println!("Time {} secs.", time.elapsed().as_secs_f32());

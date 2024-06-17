@@ -1,5 +1,6 @@
-following [RayTracingInOneWeekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html#diffusematerials/truelambertianreflection)
+Following [Ray Tracing In One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html#diffusematerials/truelambertianreflection)
 
-result:
+Result:
+
 ![](output.png)
 
