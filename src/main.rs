@@ -98,7 +98,7 @@ fn main() {
 
     cornell_box(&mut scene);
 
-    let renderer = Renderer::new(&camera, &scene, 100000);
+    let renderer = Renderer::new(&camera, &scene, 1000);
     let time = Instant::now();
     let pixels = renderer.render();
     println!("Time {} secs.", time.elapsed().as_secs_f32());
@@ -122,6 +122,10 @@ fn cornell_box(scene: &mut Scene) {
     let light = Material{
         kind:MaterialKind::DiffuseLight,
         color:rgba(15., 15., 15., 1.0)
+    };
+    let metal = Material{
+        kind:MaterialKind::Metal { fuzz: 0.0 },
+        color:Color::WHITE,
     };
     scene.add(
         Parallelogram::new(vec3(555.,0.,0.),vec3(0.,555.,0.),vec3(0.,0.,555.)),

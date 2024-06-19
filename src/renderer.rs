@@ -1,5 +1,5 @@
 use std::{
-    f32::INFINITY,
+    f32::{consts::{PI, TAU}, INFINITY},
     fs::File,
     io::{self, BufWriter},
 };
@@ -25,6 +25,13 @@ pub fn random_vec3(rng: &mut rand::rngs::ThreadRng) -> Vector3 {
         rng.gen_range(-1.0..=1.0),
         rng.gen_range(-1.0..=1.0),
     )
+}
+pub fn random_vec3_on_unit_sphere(rng:&mut rand::rngs::ThreadRng)->Vector3{
+    let theta = rng.gen_range(0.0..=TAU);
+    let phi = rng.gen_range(0.0..PI);
+    let sin_phi = phi.sin();
+
+    vec3(sin_phi*theta.cos(), sin_phi*theta.sin(), phi.cos())
 }
 // pub fn random_vec3_in_unit_sphere(rng:&mut rand::rngs::ThreadRng)->Vector3{
 //    loop {
@@ -167,7 +174,7 @@ impl MaterialKind {
         let (scattered, dir) = match self {
             MaterialKind::Lambertian => (
                 true,
-                (hit_record.normal + random_vec3(rng).normalize()).normalize(),
+                (hit_record.normal + random_vec3_on_unit_sphere(rng)).normalize(),
             ),
             MaterialKind::Metal { fuzz } => {
                 let reflected = ray_in.direction.reflect(hit_record.normal).normalize();
