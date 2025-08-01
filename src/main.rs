@@ -7,7 +7,7 @@ use std::{
 
 use lib_rs::{
     color::{rgba, Color},
-    geometry::{self, AxisAlignedBox, Parallelogram, Sphere},
+    geometry::{self, AxisAlignedBox, Circle, Parallelogram, Sphere},
     linear_algebra::vector::vec3,
 };
 use renderer::{Material, MaterialKind, Renderer};
@@ -88,7 +88,7 @@ mod scene;
 
 fn main() {
     // let bar = indicatif::ProgressBar::new((WIDTH * HEIGHT) as u64);
-    let mut camera = Camera::new(320, 320, 40.0);
+    let mut camera = Camera::new(640, 640, 40.0);
     camera.move_to(vec3(278.0, 278.0, -800.0));
     camera.look_at(vec3(278.0, 278.0, 0.0));
     // let sphere1 = Sphere::new(vec3(0.0, 0.0, -1.0), 0.5);
@@ -97,8 +97,10 @@ fn main() {
     let mut scene = Scene::new();
 
     cornell_box(&mut scene);
+    // simple_light_scene(&mut scene);
+    // box_scene(&mut scene);
 
-    let renderer = Renderer::new(&camera, &scene, 1000);
+    let renderer = Renderer::new(&camera, &scene, 50000);
     let time = Instant::now();
     let pixels = renderer.render();
     println!("Time {} secs.", time.elapsed().as_secs_f32());
@@ -107,48 +109,53 @@ fn main() {
 }
 
 fn cornell_box(scene: &mut Scene) {
-    let white = Material{
-        kind:MaterialKind::Lambertian,
-        color:rgba(0.73, 0.73, 0.73, 1.0)
+    let white = Material {
+        kind: MaterialKind::Lambertian,
+        color: rgba(0.73, 0.73, 0.73, 1.0),
     };
-    let red = Material{
-        kind:MaterialKind::Lambertian,
-        color:rgba(0.65, 0.05, 0.05, 1.0)
+    let red = Material {
+        kind: MaterialKind::Lambertian,
+        color: rgba(0.65, 0.05, 0.05, 1.0),
     };
-    let green = Material{
-        kind:MaterialKind::Lambertian,
-        color:rgba(0.12, 0.45, 0.15, 1.0)
+    let green = Material {
+        kind: MaterialKind::Lambertian,
+        color: rgba(0.12, 0.45, 0.15, 1.0),
     };
-    let light = Material{
-        kind:MaterialKind::DiffuseLight,
-        color:rgba(15., 15., 15., 1.0)
+    let light = Material {
+        kind: MaterialKind::DiffuseLight,
+        color: rgba(15., 15., 15., 1.0),
     };
-    let metal = Material{
-        kind:MaterialKind::Metal { fuzz: 0.0 },
-        color:Color::WHITE,
+    let metal = Material {
+        kind: MaterialKind::Metal { fuzz: 0.0 },
+        color: Color::WHITE,
     };
     scene.add(
-        Parallelogram::new(vec3(555.,0.,0.),vec3(0.,555.,0.),vec3(0.,0.,555.)),
+        Parallelogram::new(vec3(555., 0., 0.), vec3(0., 555., 0.), vec3(0., 0., 555.)),
         green,
     );
     scene.add(
-        Parallelogram::new(vec3(0.,0.,0.),vec3(0.,555.,0.),vec3(0.,0.,555.)),
+        Parallelogram::new(vec3(0., 0., 0.), vec3(0., 555., 0.), vec3(0., 0., 555.)),
         red,
     );
     scene.add(
-        Parallelogram::new(vec3(343.,544.,332.),vec3(-130.,0.,0.),vec3(0.,0.,-105.)),
+        // Parallelogram::new(vec3(343.,544.,332.),vec3(-130.,0.,0.),vec3(0.,0.,-105.)),
+        Circle::new(vec3(278.0, 544.0, 278.0), 70.0, vec3(0.0, -1.0, 0.0)),
         light,
     );
     scene.add(
-        Parallelogram::new(vec3(0.,0.,0.),vec3(555.,0.,0.),vec3(0.,0.,555.)),
+        Parallelogram::new(vec3(0., 0., 0.), vec3(555., 0., 0.), vec3(0., 0., 555.)),
         white,
     );
     scene.add(
-        Parallelogram::new(vec3(555.,555.,555.),vec3(-555.,0.,0.),vec3(0.,0.,-555.)),
+        Parallelogram::new(
+            vec3(555., 555., 555.),
+            vec3(-555., 0., 0.),
+            vec3(0., 0., -555.),
+        ),
         white,
     );
     scene.add(
-        Parallelogram::new(vec3(0.,0.,555.),vec3(555.,0.,0.),vec3(0.,555.,0.)),
+        Parallelogram::new(vec3(0., 0., 555.), vec3(555., 0., 0.), vec3(0., 555., 0.)),
         white,
     );
 
@@ -160,7 +167,6 @@ fn cornell_box(scene: &mut Scene) {
         AxisAlignedBox::new(vec3(265., 0., 295.), vec3(430., 330., 460.)),
         white,
     );
-    
 }
 
 fn simple_light_scene(scene: &mut Scene) {
@@ -187,7 +193,10 @@ fn simple_light_scene(scene: &mut Scene) {
     );
     scene.add(
         Parallelogram::new(vec3(3., 1., -2.), vec3(2.0, 0.0, 0.0), vec3(0.0, 2.0, 0.0)),
-        Material { kind: MaterialKind::DiffuseLight, color: rgba(4.0, 4.0, 4.0, 1.0) }
+        Material {
+            kind: MaterialKind::DiffuseLight,
+            color: rgba(4.0, 4.0, 4.0, 1.0),
+        },
     )
 }
 
