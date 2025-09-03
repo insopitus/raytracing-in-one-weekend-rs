@@ -17,6 +17,7 @@ use crate::{camera::Camera, scene::Scene};
 mod camera;
 mod renderer;
 mod scene;
+mod parser;
 
 // fn main() {
 //     // let bar = indicatif::ProgressBar::new((WIDTH * HEIGHT) as u64);

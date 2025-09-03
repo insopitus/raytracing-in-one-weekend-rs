@@ -12,6 +12,9 @@ impl Scene {
     pub fn new() -> Self {
         Self { entities: vec![] }
     }
+    pub fn from_list(list:Vec<(Box<dyn Hitable + Sync>, Material)>)->Self{
+        Self {entities:list}
+    }
     pub fn ray_cast(&self, ray: Ray) -> Option<(HitRecord, Material)> {
         let mut iter = self.entities.iter();
         let mut nearest: Option<(HitRecord, Material)> = None;

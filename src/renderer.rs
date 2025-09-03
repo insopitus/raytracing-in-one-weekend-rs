@@ -16,6 +16,7 @@ use lib_rs::{
     ray::{HitRecord, Hitable, Ray},
 };
 use rand::Rng;
+use serde::Deserialize;
 
 use crate::{camera::Camera, scene::Scene};
 
@@ -157,7 +158,8 @@ fn reflectance(cosine: f32, ref_idx: f32) -> f32 {
     r0 + (1. - r0) * (1. - cosine).powf(5.0)
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy,Deserialize,Debug)]
+#[serde(tag="type")]
 pub enum MaterialKind {
     Lambertian,
     Metal { fuzz: f32 },
@@ -215,7 +217,7 @@ impl MaterialKind {
         }
     }
 }
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy,Deserialize,Debug)]
 pub struct Material {
     pub kind: MaterialKind,
     pub color: Color,
