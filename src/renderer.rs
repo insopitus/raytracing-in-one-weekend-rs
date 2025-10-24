@@ -11,7 +11,7 @@ use image::ImageError;
 use indicatif::ProgressBar;
 use lib_rs::{
     color::{self, mix, rgba, Color},
-    geometry::Sphere,
+    geometry::{AxisAlignedBox, Parallelogram, Sphere},
     linear_algebra::{
         vector::{cross, dot, vec3},
         Vector3,
@@ -19,7 +19,7 @@ use lib_rs::{
     ray::{HitRecord, Hitable, Ray},
 };
 use rand::Rng;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{camera::Camera, scene::Scene};
 
@@ -248,5 +248,20 @@ impl Material {
     }
     pub fn emit(&self) -> Color {
         self.kind.emit(self.color)
+    }
+}
+#[derive(Serialize, Deserialize, Debug)]
+pub enum Geometry {
+    Sphere(Sphere),
+    Parallelogram(Parallelogram),
+    AxisAlignedBox(AxisAlignedBox),
+}
+impl Geometry {
+    pub fn hit(&self, ray: Ray, range: std::ops::Range<f32>) -> Option<HitRecord> {
+        match self {
+            Geometry::Sphere(sphere) => sphere.hit(ray, range),
+            Geometry::Parallelogram(parallelogram) => parallelogram.hit(ray, range),
+            Geometry::AxisAlignedBox(aabb) => aabb.hit(ray, range),
+        }
     }
 }

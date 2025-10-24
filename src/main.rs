@@ -11,8 +11,9 @@ use lib_rs::{
     linear_algebra::vector::vec3,
 };
 use renderer::{Material, MaterialKind, Renderer};
+use serde::Serialize;
 
-use crate::{camera::Camera, scene::Scene};
+use crate::{camera::Camera, renderer::Geometry, scene::Scene};
 
 mod camera;
 mod parser;
@@ -97,6 +98,10 @@ fn main() {
     // let mut geometries = vec![sphere];
     let mut scene = Scene::new();
 
+    let str = "{\"AxisAlignedBox\":{\"min\":{\"x\":1.0,\"y\":0.0,\"z\":0.0},\"max\":{\"x\":2.0,\"y\":1.0,\"z\":1.0}}}";
+    let geometry = serde_json::from_str::<Geometry>(str).unwrap();
+    dbg!(geometry);
+    return;
     cornell_box(&mut scene);
     // simple_light_scene(&mut scene);
     // box_scene(&mut scene);
@@ -130,117 +135,140 @@ fn cornell_box(scene: &mut Scene) {
         kind: MaterialKind::Metal { fuzz: 0.0 },
         color: Color::WHITE,
     };
+    use renderer::Geometry;
     scene.add(
-        Parallelogram::new(vec3(555., 0., 0.), vec3(0., 555., 0.), vec3(0., 0., 555.)),
+        Geometry::Parallelogram(Parallelogram::new(
+            vec3(555., 0., 0.),
+            vec3(0., 555., 0.),
+            vec3(0., 0., 555.),
+        )),
         green,
     );
     scene.add(
-        Parallelogram::new(vec3(0., 0., 0.), vec3(0., 555., 0.), vec3(0., 0., 555.)),
+        Geometry::Parallelogram(Parallelogram::new(
+            vec3(0., 0., 0.),
+            vec3(0., 555., 0.),
+            vec3(0., 0., 555.),
+        )),
         red,
     );
     scene.add(
         // Parallelogram::new(vec3(343.,544.,332.),vec3(-130.,0.,0.),vec3(0.,0.,-105.)),
-        Sphere::new(vec3(278.0, 544.0, 278.0), 70.0),
+        Geometry::Sphere(Sphere::new(vec3(278.0, 544.0, 278.0), 70.0)),
         light,
     );
     scene.add(
-        Parallelogram::new(vec3(0., 0., 0.), vec3(555., 0., 0.), vec3(0., 0., 555.)),
+        Geometry::Parallelogram(Parallelogram::new(
+            vec3(0., 0., 0.),
+            vec3(555., 0., 0.),
+            vec3(0., 0., 555.),
+        )),
         white,
     );
     scene.add(
-        Parallelogram::new(
+        Geometry::Parallelogram(Parallelogram::new(
             vec3(555., 555., 555.),
             vec3(-555., 0., 0.),
             vec3(0., 0., -555.),
-        ),
+        )),
         white,
     );
     scene.add(
-        Parallelogram::new(vec3(0., 0., 555.), vec3(555., 0., 0.), vec3(0., 555., 0.)),
+        Geometry::Parallelogram(Parallelogram::new(
+            vec3(0., 0., 555.),
+            vec3(555., 0., 0.),
+            vec3(0., 555., 0.),
+        )),
         white,
     );
 
     scene.add(
-        AxisAlignedBox::new(vec3(130., 0., 65.), vec3(295., 165., 230.)),
+        Geometry::AxisAlignedBox(AxisAlignedBox::new(
+            vec3(130., 0., 65.),
+            vec3(295., 165., 230.),
+        )),
         white,
     );
     scene.add(
-        AxisAlignedBox::new(vec3(265., 0., 295.), vec3(430., 330., 460.)),
+        Geometry::AxisAlignedBox(AxisAlignedBox::new(
+            vec3(265., 0., 295.),
+            vec3(430., 330., 460.),
+        )),
         white,
     );
 }
 
-fn simple_light_scene(scene: &mut Scene) {
-    scene.add(
-        Sphere::new(vec3(0.0, -1000.0, 0.0), 1000.0),
-        Material {
-            kind: MaterialKind::Lambertian,
-            color: Color::WHITE,
-        },
-    );
-    scene.add(
-        Sphere::new(vec3(0.0, 2.0, 0.0), 2.0),
-        Material {
-            kind: MaterialKind::Lambertian,
-            color: Color::WHITE,
-        },
-    );
-    scene.add(
-        Sphere::new(vec3(0.0, 7.0, 0.0), 1.0),
-        Material {
-            kind: MaterialKind::DiffuseLight,
-            color: Color::WHITE,
-        },
-    );
-    scene.add(
-        Parallelogram::new(vec3(3., 1., -2.), vec3(2.0, 0.0, 0.0), vec3(0.0, 2.0, 0.0)),
-        Material {
-            kind: MaterialKind::DiffuseLight,
-            color: rgba(4.0, 4.0, 4.0, 1.0),
-        },
-    )
-}
+// fn simple_light_scene(scene: &mut Scene) {
+//     scene.add(
+//         Sphere::new(vec3(0.0, -1000.0, 0.0), 1000.0),
+//         Material {
+//             kind: MaterialKind::Lambertian,
+//             color: Color::WHITE,
+//         },
+//     );
+//     scene.add(
+//         Sphere::new(vec3(0.0, 2.0, 0.0), 2.0),
+//         Material {
+//             kind: MaterialKind::Lambertian,
+//             color: Color::WHITE,
+//         },
+//     );
+//     scene.add(
+//         Sphere::new(vec3(0.0, 7.0, 0.0), 1.0),
+//         Material {
+//             kind: MaterialKind::DiffuseLight,
+//             color: Color::WHITE,
+//         },
+//     );
+//     scene.add(
+//         Parallelogram::new(vec3(3., 1., -2.), vec3(2.0, 0.0, 0.0), vec3(0.0, 2.0, 0.0)),
+//         Material {
+//             kind: MaterialKind::DiffuseLight,
+//             color: rgba(4.0, 4.0, 4.0, 1.0),
+//         },
+//     )
+// }
 
-fn box_scene(scene: &mut Scene) {
-    scene.add(
-        // left red
-        Parallelogram::new(vec3(-3.0, -2., 5.), vec3(0., 0., -4.), vec3(0., 4., 0.)),
-        Material {
-            kind: MaterialKind::Lambertian,
-            color: rgba(1.0, 0.2, 0.2, 1.0),
-        },
-    );
-    scene.add(
-        // back green
-        Parallelogram::new(vec3(-2., -2., 0.), vec3(4., 0., 0.), vec3(0., 4., 0.)),
-        Material {
-            kind: MaterialKind::Lambertian,
-            color: rgba(0.2, 1.0, 0.2, 1.0),
-        },
-    );
-    scene.add(
-        // right blue
-        Parallelogram::new(vec3(3., -2., 1.), vec3(0., 0., 4.), vec3(0., 4., 0.)),
-        Material {
-            kind: MaterialKind::Lambertian,
-            color: rgba(0.2, 0.2, 1.0, 1.0),
-        },
-    );
-    scene.add(
-        // upper orange
-        Parallelogram::new(vec3(-2., 3., 1.), vec3(4., 0., 0.), vec3(0., 0., 4.)),
-        Material {
-            kind: MaterialKind::Lambertian,
-            color: rgba(1.0, 0.5, 0.0, 1.0),
-        },
-    );
+// fn box_scene(scene: &mut Scene) {
+//     scene.add(
+//         // left red
+//         Parallelogram::new(vec3(-3.0, -2., 5.), vec3(0., 0., -4.), vec3(0., 4., 0.)),
+//         Material {
+//             kind: MaterialKind::Lambertian,
+//             color: rgba(1.0, 0.2, 0.2, 1.0),
+//         },
+//     );
+//     scene.add(
+//         // back green
+//         Parallelogram::new(vec3(-2., -2., 0.), vec3(4., 0., 0.), vec3(0., 4., 0.)),
+//         Material {
+//             kind: MaterialKind::Lambertian,
+//             color: rgba(0.2, 1.0, 0.2, 1.0),
+//         },
+//     );
+//     scene.add(
+//         // right blue
+//         Parallelogram::new(vec3(3., -2., 1.), vec3(0., 0., 4.), vec3(0., 4., 0.)),
+//         Material {
+//             kind: MaterialKind::Lambertian,
+//             color: rgba(0.2, 0.2, 1.0, 1.0),
+//         },
+//     );
+//     scene.add(
+//         // upper orange
+//         Parallelogram::new(vec3(-2., 3., 1.), vec3(4., 0., 0.), vec3(0., 0., 4.)),
+//         Material {
+//             kind: MaterialKind::Lambertian,
+//             color: rgba(1.0, 0.5, 0.0, 1.0),
+//         },
+//     );
 
-    scene.add(
-        // lower teal
-        Parallelogram::new(vec3(-2., -3., 5.), vec3(4., 0., 0.), vec3(0., 0., -4.)),
-        Material {
-            kind: MaterialKind::Lambertian,
-            color: rgba(0.2, 0.8, 0.8, 1.0),
-        },
-    );
-}
+//     scene.add(
+//         // lower teal
+//         Parallelogram::new(vec3(-2., -3., 5.), vec3(4., 0., 0.), vec3(0., 0., -4.)),
+//         Material {
+//             kind: MaterialKind::Lambertian,
+//             color: rgba(0.2, 0.8, 0.8, 1.0),
+//         },
+//     );
+// }
