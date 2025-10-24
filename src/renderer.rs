@@ -1,5 +1,8 @@
 use std::{
-    f32::{consts::{PI, TAU}, INFINITY},
+    f32::{
+        consts::{PI, TAU},
+        INFINITY,
+    },
     fs::File,
     io::{self, BufWriter},
 };
@@ -27,12 +30,12 @@ pub fn random_vec3(rng: &mut rand::rngs::ThreadRng) -> Vector3 {
         rng.gen_range(-1.0..=1.0),
     )
 }
-pub fn random_vec3_on_unit_sphere(rng:&mut rand::rngs::ThreadRng)->Vector3{
+pub fn random_vec3_on_unit_sphere(rng: &mut rand::rngs::ThreadRng) -> Vector3 {
     let theta = rng.gen_range(0.0..=TAU);
     let phi = rng.gen_range(0.0..PI);
     let sin_phi = phi.sin();
 
-    vec3(sin_phi*theta.cos(), sin_phi*theta.sin(), phi.cos())
+    vec3(sin_phi * theta.cos(), sin_phi * theta.sin(), phi.cos())
 }
 // pub fn random_vec3_in_unit_sphere(rng:&mut rand::rngs::ThreadRng)->Vector3{
 //    loop {
@@ -64,7 +67,7 @@ pub struct Renderer<'a> {
     scene: &'a Scene,
     samples: u32,
     light_direction: Vector3,
-    background:Color
+    background: Color,
 }
 impl<'a> Renderer<'a> {
     pub fn new(camera: &'a Camera, scene: &'a Scene, samples: u32) -> Self {
@@ -73,7 +76,7 @@ impl<'a> Renderer<'a> {
             scene,
             samples,
             light_direction: vec3(1.0, 1.0, 1.0).normalize(),
-            background:Color::BLACK
+            background: Color::BLACK,
         }
     }
     pub fn ray_color(&self, ray: Ray, max_depth: u32, rng: &mut rand::rngs::ThreadRng) -> Color {
@@ -95,7 +98,7 @@ impl<'a> Renderer<'a> {
                 let scatter_color = if scatter {
                     self.ray_color(ray_out, max_depth, rng) * attenuation
                 } else {
-                    rgba(0.0, 0.0, 0.0, 1.0)
+                    self.background
                 };
                 scatter_color + emmision_color
             };
@@ -107,15 +110,20 @@ impl<'a> Renderer<'a> {
         }
     }
     pub fn render(&self) -> Vec<Color> {
-        let mut pixels =
-            Vec::with_capacity((self.camera.frame_size().0 * self.camera.frame_size().1) as usize);
-        let bar = ProgressBar::new(pixels.capacity() as u64);
+        let pixels_count = (self.camera.frame_size().0 * self.camera.frame_size().1) as usize;
+        let bar = ProgressBar::new(pixels_count as u64);
         use rayon::prelude::*;
-
+        let mut positions = Vec::with_capacity(pixels_count);
         for j in 0..self.camera.frame_size().1 {
             for i in 0..self.camera.frame_size().0 {
+                positions.push((i, j));
+            }
+        }
+        let pixels = positions
+            .into_par_iter()
+            .map(|(i, j)| {
                 let accu_color: Color = (0..self.samples)
-                    .into_par_iter()
+                    .into_iter()
                     .map(|_| {
                         let mut rng = rand::thread_rng();
                         let ray = self.camera.get_ray_at(i, j, &mut rng);
@@ -124,11 +132,11 @@ impl<'a> Renderer<'a> {
                     })
                     .sum::<Color>()
                     / self.samples as f32;
-
-                pixels.push(accu_color);
                 bar.inc(1);
-            }
-        }
+                accu_color
+            })
+            .collect();
+
         bar.finish();
 
         pixels
@@ -158,8 +166,8 @@ fn reflectance(cosine: f32, ref_idx: f32) -> f32 {
     r0 + (1. - r0) * (1. - cosine).powf(5.0)
 }
 
-#[derive(Clone, Copy,Deserialize,Debug)]
-#[serde(tag="type")]
+#[derive(Clone, Copy, Deserialize, Debug)]
+#[serde(tag = "type")]
 pub enum MaterialKind {
     Lambertian,
     Metal { fuzz: f32 },
@@ -204,20 +212,18 @@ impl MaterialKind {
 
                 (true, direction.normalize())
             }
-            MaterialKind::DiffuseLight =>(false,ray_in.direction),
+            MaterialKind::DiffuseLight => (false, ray_in.direction),
         };
         (scattered, Ray::new(hit_record.point, dir))
     }
-    pub fn emit(&self, color:Color)->Color{
-        match self{
+    pub fn emit(&self, color: Color) -> Color {
+        match self {
             MaterialKind::DiffuseLight => color,
-            _=>{
-                rgba(0.0, 0.0, 0.0, 1.0)
-            }
+            _ => rgba(0.0, 0.0, 0.0, 1.0),
         }
     }
 }
-#[derive(Clone, Copy,Deserialize,Debug)]
+#[derive(Clone, Copy, Deserialize, Debug)]
 pub struct Material {
     pub kind: MaterialKind,
     pub color: Color,
@@ -240,8 +246,7 @@ impl Material {
         }
         (scatter, ray_out, self.color)
     }
-    pub fn emit(&self)->Color{
-
+    pub fn emit(&self) -> Color {
         self.kind.emit(self.color)
     }
 }

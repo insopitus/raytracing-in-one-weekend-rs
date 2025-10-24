@@ -7,7 +7,7 @@ use std::{
 
 use lib_rs::{
     color::{rgba, Color},
-    geometry::{self, AxisAlignedBox, Circle, Parallelogram, Sphere},
+    geometry::{self, AxisAlignedBox, Parallelogram, Sphere},
     linear_algebra::vector::vec3,
 };
 use renderer::{Material, MaterialKind, Renderer};
@@ -15,9 +15,9 @@ use renderer::{Material, MaterialKind, Renderer};
 use crate::{camera::Camera, scene::Scene};
 
 mod camera;
+mod parser;
 mod renderer;
 mod scene;
-mod parser;
 
 // fn main() {
 //     // let bar = indicatif::ProgressBar::new((WIDTH * HEIGHT) as u64);
@@ -101,7 +101,7 @@ fn main() {
     // simple_light_scene(&mut scene);
     // box_scene(&mut scene);
 
-    let renderer = Renderer::new(&camera, &scene, 50000);
+    let renderer = Renderer::new(&camera, &scene, 50);
     let time = Instant::now();
     let pixels = renderer.render();
     println!("Time {} secs.", time.elapsed().as_secs_f32());
@@ -140,7 +140,7 @@ fn cornell_box(scene: &mut Scene) {
     );
     scene.add(
         // Parallelogram::new(vec3(343.,544.,332.),vec3(-130.,0.,0.),vec3(0.,0.,-105.)),
-        Circle::new(vec3(278.0, 544.0, 278.0), 70.0, vec3(0.0, -1.0, 0.0)),
+        Sphere::new(vec3(278.0, 544.0, 278.0), 70.0),
         light,
     );
     scene.add(
