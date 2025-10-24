@@ -11,7 +11,7 @@ use lib_rs::{
     linear_algebra::vector::vec3,
 };
 use renderer::{Material, MaterialKind, Renderer};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{camera::Camera, renderer::Geometry, scene::Scene};
 
@@ -19,95 +19,60 @@ mod camera;
 mod parser;
 mod renderer;
 mod scene;
-
-// fn main() {
-//     // let bar = indicatif::ProgressBar::new((WIDTH * HEIGHT) as u64);
-//     let mut camera = Camera::new(1280, 760,90.0);
-//     camera.move_to(vec3(0.8, 0.4, 0.4));
-//     camera.look_at(vec3(0.0, 0.0, -0.5));
-//     // let sphere1 = Sphere::new(vec3(0.0, 0.0, -1.0), 0.5);
-//     // let sphere1 = Sphere::new(vec3(0.0, -100.5, -1.0), 100.0);
-//     // let mut geometries = vec![sphere];
-//     let mut scene = Scene::new();
-//     // return;
-//     // glass ball
-//     // scene.add(
-//     //     Sphere::new(vec3(-0.3, -0.2, -0.8), 0.2),
-//     //     Material {
-//     //         kind: MaterialKind::Dielectric {
-//     //             fraction_rate: 1.5,
-//     //         },
-//     //         color: rgba(1., 1., 1., 1.0),
-//     //     },
-//     // );
-
-//     scene.add(
-//         Sphere::new(vec3(0.0, 0.0, 0.0), 0.5),
-//         Material {
-//             kind: MaterialKind::Metal { fuzz: 0.2 },
-//             color: rgba(0.7, 0.3, 0.3, 1.0),
-//         },
-//     );
-//     // // metal ball
-//     // scene.add(
-//     //     Sphere::new(vec3(1.0, 0.0, -1.0), 0.5),
-//     //     Material {
-//     //         kind: MaterialKind::Metal { fuzz: 0.2 },
-//     //         color: rgba(0.8, 0.8, 0.8, 1.0),
-//     //     },
-//     // );
-
-//     scene.add(
-//         AxisAlignedBox::new(vec3(0.4, -0.2, -0.8), vec3(0.8, 0.2, -0.4)),
-//         Material {
-//             kind: MaterialKind::Dielectric { fraction_rate: 1.5 },
-//             color: rgba(1.0, 1.0, 1.0, 1.0),
-//         },
-//     );
-//     scene.add(
-//         Sphere::new(vec3(0.0, 0.0, -2.0), 0.5),
-//         Material {
-//             kind: MaterialKind::Lambertian,
-//             color: rgba(0.4, 0.8, 0.3, 1.0),
-//         },
-//     );
-
-//     // ground needs to be added last; ray only hit one target
-//     scene.add(
-//         Sphere::new(vec3(0.0, -100.5, -1.0), 100.0),
-//         Material {
-//             kind: MaterialKind::Lambertian,
-//             color: rgba(0.8, 0.8, 0.0, 1.0),
-//         },
-//     );
-//     let renderer = Renderer::new(&camera, &scene, 50);
-//     let time = Instant::now();
-//     let pixels = renderer.render();
-//     println!("Time {} secs.", time.elapsed().as_secs_f32());
-//     let writer = BufWriter::new(File::create("output.png").unwrap());
-//     renderer.write(&pixels, writer);
-// }
+#[derive(Deserialize)]
+struct CameraConfig {
+    position: [f32; 3],
+    look_at: [f32; 3],
+    fov: f32,
+    width: u32,
+    height: u32,
+}
+#[derive(Deserialize)]
+struct MeshConfig {
+    geometry: Geometry,
+    material: Material,
+}
+#[derive(Deserialize)]
+struct SceneConfig {
+    camera: CameraConfig,
+    samples: u32,
+    scene: Vec<MeshConfig>,
+}
 
 fn main() {
-    // let bar = indicatif::ProgressBar::new((WIDTH * HEIGHT) as u64);
-    let mut camera = Camera::new(640, 640, 40.0);
-    camera.move_to(vec3(278.0, 278.0, -800.0));
-    camera.look_at(vec3(278.0, 278.0, 0.0));
-    // let sphere1 = Sphere::new(vec3(0.0, 0.0, -1.0), 0.5);
-    // let sphere1 = Sphere::new(vec3(0.0, -100.5, -1.0), 100.0);
-    // let mut geometries = vec![sphere];
-    let mut scene = Scene::new();
+    let scene_config_path = std::env::args()
+        .skip(1)
+        .next()
+        .expect("scene desc is needed.");
+    let scene_config: SceneConfig =
+        serde_json::from_str(&std::fs::read_to_string(scene_config_path).unwrap()).unwrap();
+    let mut camera = Camera::new(
+        scene_config.camera.width,
+        scene_config.camera.height,
+        scene_config.camera.fov,
+    );
+    camera.move_to(vec3(
+        scene_config.camera.position[0],
+        scene_config.camera.position[1],
+        scene_config.camera.position[2],
+    ));
+    camera.look_at(vec3(
+        scene_config.camera.look_at[0],
+        scene_config.camera.look_at[1],
+        scene_config.camera.look_at[2],
+    ));
+    let mut scene = Scene::from_list(
+        scene_config
+            .scene
+            .into_iter()
+            .map(|mesh| (mesh.geometry, mesh.material))
+            .collect(),
+    );
+    // let mut scene = Scene::new();
 
-    let str = "{\"AxisAlignedBox\":{\"min\":{\"x\":1.0,\"y\":0.0,\"z\":0.0},\"max\":{\"x\":2.0,\"y\":1.0,\"z\":1.0}}}";
-    let geometry = serde_json::from_str::<Geometry>(str).unwrap();
-    dbg!(geometry);
-    return;
-    cornell_box(&mut scene);
-    // simple_light_scene(&mut scene);
-    // box_scene(&mut scene);
-
-    let renderer = Renderer::new(&camera, &scene, 500);
+    let renderer = Renderer::new(&camera, &scene, scene_config.samples);
     let time = Instant::now();
+    // cornell_box(&mut scene);
     let pixels = renderer.render();
     println!("Time {} secs.", time.elapsed().as_secs_f32());
     let writer = BufWriter::new(File::create("output.png").unwrap());
@@ -135,6 +100,7 @@ fn cornell_box(scene: &mut Scene) {
         kind: MaterialKind::Metal { fuzz: 0.0 },
         color: Color::WHITE,
     };
+
     use renderer::Geometry;
     scene.add(
         Geometry::Parallelogram(Parallelogram::new(

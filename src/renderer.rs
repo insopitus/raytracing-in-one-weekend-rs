@@ -166,7 +166,7 @@ fn reflectance(cosine: f32, ref_idx: f32) -> f32 {
     r0 + (1. - r0) * (1. - cosine).powf(5.0)
 }
 
-#[derive(Clone, Copy, Deserialize, Debug)]
+#[derive(Clone, Copy, Deserialize, Serialize, Debug)]
 #[serde(tag = "type")]
 pub enum MaterialKind {
     Lambertian,
@@ -223,7 +223,7 @@ impl MaterialKind {
         }
     }
 }
-#[derive(Clone, Copy, Deserialize, Debug)]
+#[derive(Clone, Copy, Deserialize, Serialize, Debug)]
 pub struct Material {
     pub kind: MaterialKind,
     pub color: Color,

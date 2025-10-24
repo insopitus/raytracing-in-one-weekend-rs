@@ -1,19 +1,169 @@
 {
-    "camera":{
-        "position":[278,278,-800],
-        "look_at":[278,278,0],
-        "fov":40.0,
-        "width":640,
-        "height":640
+  "camera": {
+    "position": [278, 278, -800],
+    "look_at": [278, 278, 0],
+    "fov": 40.0,
+    "width": 640,
+    "height": 640
+  },
+  "samples": 5000,
+  "scene": [
+    {
+      "geometry": {
+        "Parallelogram": {
+          "q": { "x": 555, "y": 0, "z": 0 },
+          "u": { "x": 0, "y": 555, "z": 1 },
+          "v": { "x": 0, "y": 0, "z": 555 }
+        }
+      },
+      "material": {
+        "kind": {
+          "type": "Lambertian"
+        },
+        "color": {
+          "r": 0.12,
+          "g": 0.45,
+          "b": 0.15,
+          "a": 1
+        }
+      }
     },
-    "samples":50000,
-    "scene":[
-        {
-            "geometry":{
-            "type":"Parallelogram",
-            "q":{"x":555,"y":0,"z":0}
-
+    {
+      "geometry": {
+        "Parallelogram": {
+          "q": { "x": 0, "y": 0, "z": 0 },
+          "u": { "x": 0, "y": 555, "z": 0 },
+          "v": { "x": 0, "y": 0, "z": 555 }
         }
+      },
+      "material": {
+        "kind": {
+          "type": "Lambertian"
+        },
+        "color": {
+          "r": 0.65,
+          "g": 0.05,
+          "b": 0.05,
+          "a": 1
         }
-    ]
+      }
+    },
+    {
+      "geometry": {
+        "Sphere": {
+          "center": { "x": 278, "y": 544, "z": 278 },
+          "radius": 70
+        }
+      },
+      "material": {
+        "kind": {
+          "type": "DiffuseLight"
+        },
+        "color": {
+          "r": 10,
+          "g": 10,
+          "b": 10,
+          "a": 1
+        }
+      }
+    },
+    {
+      "geometry": {
+        "Parallelogram": {
+          "q": { "x": 0, "y": 0, "z": 0 },
+          "u": { "x": 555, "y": 0, "z": 0 },
+          "v": { "x": 0, "y": 0, "z": 555 }
+        }
+      },
+      "material": {
+        "kind": {
+          "type": "Lambertian"
+        },
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1,
+          "a": 1
+        }
+      }
+    },
+    {
+      "geometry": {
+        "Parallelogram": {
+          "q": { "x": 555, "y": 555, "z": 555 },
+          "u": { "x": -555, "y": 0, "z": 0 },
+          "v": { "x": 0, "y": 0, "z": -555 }
+        }
+      },
+      "material": {
+        "kind": {
+          "type": "Lambertian"
+        },
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1,
+          "a": 1
+        }
+      }
+    },
+    {
+      "geometry": {
+        "Parallelogram": {
+          "q": { "x": 0, "y": 0, "z": 555 },
+          "u": { "x": 555, "y": 0, "z": 0 },
+          "v": { "x": 0, "y": 555, "z": 0 }
+        }
+      },
+      "material": {
+        "kind": {
+          "type": "Lambertian"
+        },
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1,
+          "a": 1
+        }
+      }
+    },
+    {
+      "geometry": {
+        "AxisAlignedBox": {
+          "min": { "x": 130, "y": 0, "z": 65 },
+          "max": { "x": 295, "y": 165, "z": 230 }
+        }
+      },
+      "material": {
+        "kind": {
+          "type": "Lambertian"
+        },
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1,
+          "a": 1
+        }
+      }
+    },
+    {
+      "geometry": {
+        "AxisAlignedBox": {
+          "min": { "x": 265, "y": 0, "z": 295 },
+          "max": { "x": 430, "y": 330, "z": 460 }
+        }
+      },
+      "material": {
+        "kind": {
+          "type": "Lambertian"
+        },
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1,
+          "a": 1
+        }
+      }
+    }
+  ]
 }
