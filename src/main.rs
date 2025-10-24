@@ -101,7 +101,7 @@ fn main() {
     // simple_light_scene(&mut scene);
     // box_scene(&mut scene);
 
-    let renderer = Renderer::new(&camera, &scene, 50);
+    let renderer = Renderer::new(&camera, &scene, 500);
     let time = Instant::now();
     let pixels = renderer.render();
     println!("Time {} secs.", time.elapsed().as_secs_f32());
