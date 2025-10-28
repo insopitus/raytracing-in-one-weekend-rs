@@ -6,7 +6,7 @@
     "width": 640,
     "height": 640
   },
-  "samples": 500,
+  "samples": 5000,
   "scene": [
     {
       "geometry": {
@@ -148,36 +148,18 @@
         }
       }
     },
-    {
-      "geometry": {
-        "AxisAlignedBox": {
-          "min": { "x": 130, "y": 0, "z": 65 },
-          "max": { "x": 295, "y": 165, "z": 230 }
-        }
-      },
-      "material": {
-        "kind": {
-          "type": "Lambertian"
-        },
-        "color": {
-          "r": 1,
-          "g": 1,
-          "b": 1,
-          "a": 1
-        }
-      }
-    },
+
     {
       "geometry": {
         "Sphere": {
-          "center": { "x": 420, "y": 60, "z": 130 },
-          "radius": 60
+          "center": { "x": 180, "y": 100, "z": 130 },
+          "radius": 100
         }
       },
       "material": {
         "kind": {
-          "type": "Metal",
-          "fuzz": 0.0
+          "type": "Dielectric",
+          "fraction_rate": 2.0
         },
         "color": {
           "r": 1,
