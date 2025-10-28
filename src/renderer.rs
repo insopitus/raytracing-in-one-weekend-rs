@@ -18,21 +18,21 @@ use lib_rs::{
     },
     ray::{HitRecord, Hitable, Ray},
 };
-use rand::Rng;
+use rand::{rngs::SmallRng, Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
 
 use crate::{camera::Camera, scene::Scene};
 
-pub fn random_vec3(rng: &mut rand::rngs::ThreadRng) -> Vector3 {
+pub fn random_vec3(rng: &mut rand::rngs::SmallRng) -> Vector3 {
     vec3(
-        rng.gen_range(-1.0..=1.0),
-        rng.gen_range(-1.0..=1.0),
-        rng.gen_range(-1.0..=1.0),
+        rng.random_range(-1.0..=1.0),
+        rng.random_range(-1.0..=1.0),
+        rng.random_range(-1.0..=1.0),
     )
 }
-pub fn random_vec3_on_unit_sphere(rng: &mut rand::rngs::ThreadRng) -> Vector3 {
-    let theta = rng.gen_range(0.0..=TAU);
-    let phi = rng.gen_range(0.0..PI);
+pub fn random_vec3_on_unit_sphere(rng: &mut rand::rngs::SmallRng) -> Vector3 {
+    let theta = rng.random_range(0.0..=TAU);
+    let phi = rng.random_range(0.0..PI);
     let sin_phi = phi.sin();
 
     vec3(sin_phi * theta.cos(), sin_phi * theta.sin(), phi.cos())
@@ -46,14 +46,14 @@ pub fn random_vec3_on_unit_sphere(rng: &mut rand::rngs::ThreadRng) -> Vector3 {
 //         }
 //     }
 // }
-pub fn random_vec3_min_max(rng: &mut rand::rngs::ThreadRng, min: f32, max: f32) -> Vector3 {
+pub fn random_vec3_min_max(rng: &mut rand::rngs::SmallRng, min: f32, max: f32) -> Vector3 {
     vec3(
-        rng.gen_range(min..max),
-        rng.gen_range(min..max),
-        rng.gen_range(min..max),
+        rng.random_range(min..max),
+        rng.random_range(min..max),
+        rng.random_range(min..max),
     )
 }
-pub fn random_vec3_on_semisphere(rng: &mut rand::rngs::ThreadRng, normal: Vector3) -> Vector3 {
+pub fn random_vec3_on_semisphere(rng: &mut rand::rngs::SmallRng, normal: Vector3) -> Vector3 {
     let dir = random_vec3(rng).normalize();
     if dot(dir, normal) >= 0.0 {
         dir
@@ -79,7 +79,7 @@ impl<'a> Renderer<'a> {
             background: Color::BLACK,
         }
     }
-    pub fn ray_color(&self, ray: Ray, max_depth: u32, rng: &mut rand::rngs::ThreadRng) -> Color {
+    pub fn ray_color(&self, ray: Ray, max_depth: u32, rng: &mut rand::rngs::SmallRng) -> Color {
         if max_depth == 0 {
             return rgba(0.0, 0.0, 0.0, 1.0);
         }
@@ -122,7 +122,8 @@ impl<'a> Renderer<'a> {
         let pixels = positions
             .into_par_iter()
             .map(|(i, j)| {
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rngs::SmallRng::from_os_rng();
+
                 let accu_color: Color = (0..self.samples)
                     .into_iter()
                     .map(|_| {
@@ -179,7 +180,7 @@ impl MaterialKind {
         &self,
         ray_in: &Ray,
         hit_record: &HitRecord,
-        rng: &mut rand::rngs::ThreadRng,
+        rng: &mut rand::rngs::SmallRng,
     ) -> (bool, Ray) {
         let (scattered, dir) = match self {
             MaterialKind::Lambertian => (
@@ -233,7 +234,7 @@ impl Material {
         &self,
         ray_in: &Ray,
         hit_record: &HitRecord,
-        rng: &mut rand::rngs::ThreadRng,
+        rng: &mut rand::rngs::SmallRng,
     ) -> (bool, Ray, Color) {
         let (scatter, mut ray_out) = self.kind.scatter(ray_in, hit_record, rng);
         let ray_out_dir = ray_out.direction;
