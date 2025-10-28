@@ -11,7 +11,7 @@ use image::ImageError;
 use indicatif::ProgressBar;
 use lib_rs::{
     color::{self, mix, rgba, Color},
-    geometry::{AxisAlignedBox, Parallelogram, Sphere},
+    geometry::{AxisAlignedBox, Circle, Parallelogram, Sphere},
     linear_algebra::{
         vector::{cross, dot, vec3},
         Vector3,
@@ -96,7 +96,7 @@ impl<'a> Renderer<'a> {
                 // let n = record.normal;
                 // rgba(n.x+1.0,n.y+1.0,n.z+1.0,2.0)*0.5
                 let scatter_color = if scatter {
-                    self.ray_color(ray_out, max_depth, rng) * attenuation
+                    self.ray_color(ray_out, max_depth - 1, rng) * attenuation
                 } else {
                     self.background
                 };
@@ -255,6 +255,7 @@ pub enum Geometry {
     Sphere(Sphere),
     Parallelogram(Parallelogram),
     AxisAlignedBox(AxisAlignedBox),
+    Circle(Circle),
 }
 impl Geometry {
     pub fn hit(&self, ray: Ray, range: std::ops::Range<f32>) -> Option<HitRecord> {
@@ -262,6 +263,7 @@ impl Geometry {
             Geometry::Sphere(sphere) => sphere.hit(ray, range),
             Geometry::Parallelogram(parallelogram) => parallelogram.hit(ray, range),
             Geometry::AxisAlignedBox(aabb) => aabb.hit(ray, range),
+            Geometry::Circle(circle) => circle.hit(ray, range),
         }
     }
 }

@@ -61,107 +61,20 @@ fn main() {
         scene_config.camera.look_at[1],
         scene_config.camera.look_at[2],
     ));
-    let mut scene = Scene::from_list(
+    let scene = Scene::from_list(
         scene_config
             .scene
             .into_iter()
             .map(|mesh| (mesh.geometry, mesh.material))
             .collect(),
     );
-    // let mut scene = Scene::new();
 
     let renderer = Renderer::new(&camera, &scene, scene_config.samples);
     let time = Instant::now();
-    // cornell_box(&mut scene);
     let pixels = renderer.render();
     println!("Time {} secs.", time.elapsed().as_secs_f32());
     let writer = BufWriter::new(File::create("output.png").unwrap());
     renderer.write(&pixels, writer);
-}
-
-fn cornell_box(scene: &mut Scene) {
-    let white = Material {
-        kind: MaterialKind::Lambertian,
-        color: rgba(0.73, 0.73, 0.73, 1.0),
-    };
-    let red = Material {
-        kind: MaterialKind::Lambertian,
-        color: rgba(0.65, 0.05, 0.05, 1.0),
-    };
-    let green = Material {
-        kind: MaterialKind::Lambertian,
-        color: rgba(0.12, 0.45, 0.15, 1.0),
-    };
-    let light = Material {
-        kind: MaterialKind::DiffuseLight,
-        color: rgba(15., 15., 15., 1.0),
-    };
-    let metal = Material {
-        kind: MaterialKind::Metal { fuzz: 0.0 },
-        color: Color::WHITE,
-    };
-
-    use renderer::Geometry;
-    scene.add(
-        Geometry::Parallelogram(Parallelogram::new(
-            vec3(555., 0., 0.),
-            vec3(0., 555., 0.),
-            vec3(0., 0., 555.),
-        )),
-        green,
-    );
-    scene.add(
-        Geometry::Parallelogram(Parallelogram::new(
-            vec3(0., 0., 0.),
-            vec3(0., 555., 0.),
-            vec3(0., 0., 555.),
-        )),
-        red,
-    );
-    scene.add(
-        // Parallelogram::new(vec3(343.,544.,332.),vec3(-130.,0.,0.),vec3(0.,0.,-105.)),
-        Geometry::Sphere(Sphere::new(vec3(278.0, 544.0, 278.0), 70.0)),
-        light,
-    );
-    scene.add(
-        Geometry::Parallelogram(Parallelogram::new(
-            vec3(0., 0., 0.),
-            vec3(555., 0., 0.),
-            vec3(0., 0., 555.),
-        )),
-        white,
-    );
-    scene.add(
-        Geometry::Parallelogram(Parallelogram::new(
-            vec3(555., 555., 555.),
-            vec3(-555., 0., 0.),
-            vec3(0., 0., -555.),
-        )),
-        white,
-    );
-    scene.add(
-        Geometry::Parallelogram(Parallelogram::new(
-            vec3(0., 0., 555.),
-            vec3(555., 0., 0.),
-            vec3(0., 555., 0.),
-        )),
-        white,
-    );
-
-    scene.add(
-        Geometry::AxisAlignedBox(AxisAlignedBox::new(
-            vec3(130., 0., 65.),
-            vec3(295., 165., 230.),
-        )),
-        white,
-    );
-    scene.add(
-        Geometry::AxisAlignedBox(AxisAlignedBox::new(
-            vec3(265., 0., 295.),
-            vec3(430., 330., 460.),
-        )),
-        white,
-    );
 }
 
 // fn simple_light_scene(scene: &mut Scene) {

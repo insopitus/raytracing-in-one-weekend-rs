@@ -6,7 +6,7 @@
     "width": 640,
     "height": 640
   },
-  "samples": 5000,
+  "samples": 50,
   "scene": [
     {
       "geometry": {
@@ -50,9 +50,10 @@
     },
     {
       "geometry": {
-        "Sphere": {
+        "Circle": {
           "center": { "x": 278, "y": 544, "z": 278 },
-          "radius": 70
+          "radius": 70,
+          "normal": { "x": 0, "y": 1, "z": 0 }
         }
       },
       "material": {
@@ -129,6 +130,26 @@
     },
     {
       "geometry": {
+        "Parallelogram": {
+          "q": { "x": 0, "y": 0, "z": -555 },
+          "u": { "x": -555, "y": 0, "z": 0 },
+          "v": { "x": 0, "y": -555, "z": 0 }
+        }
+      },
+      "material": {
+        "kind": {
+          "type": "Lambertian"
+        },
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1,
+          "a": 1
+        }
+      }
+    },
+    {
+      "geometry": {
         "AxisAlignedBox": {
           "min": { "x": 130, "y": 0, "z": 65 },
           "max": { "x": 295, "y": 165, "z": 230 }
@@ -137,6 +158,26 @@
       "material": {
         "kind": {
           "type": "Lambertian"
+        },
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1,
+          "a": 1
+        }
+      }
+    },
+    {
+      "geometry": {
+        "Sphere": {
+          "center": { "x": 420, "y": 60, "z": 130 },
+          "radius": 60
+        }
+      },
+      "material": {
+        "kind": {
+          "type": "Metal",
+          "fuzz": 0.0
         },
         "color": {
           "r": 1,
