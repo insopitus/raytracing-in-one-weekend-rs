@@ -122,10 +122,10 @@ impl<'a> Renderer<'a> {
         let pixels = positions
             .into_par_iter()
             .map(|(i, j)| {
+                let mut rng = rand::thread_rng();
                 let accu_color: Color = (0..self.samples)
                     .into_iter()
                     .map(|_| {
-                        let mut rng = rand::thread_rng();
                         let ray = self.camera.get_ray_at(i, j, &mut rng);
                         let color = self.ray_color(ray, 10, &mut rng);
                         color
@@ -144,7 +144,7 @@ impl<'a> Renderer<'a> {
     pub fn write(&self, pixels: &Vec<Color>, mut writer: impl io::Write + io::Seek) {
         let mut buffer: Vec<u8> = Vec::with_capacity(pixels.len() * 4);
         for c in pixels {
-            buffer.extend_from_slice(&c.linear_to_gamma(2.2).as_rgba8_bytes());
+            buffer.extend_from_slice(&c.linear_to_srgb(2.2).as_rgba8_bytes());
         }
         // let mut writer = BufWriter::new(File::create("output.png").unwrap());
         image::write_buffer_with_format(
