@@ -1,42 +1,38 @@
 use std::{
-    f32::{
-        consts::{PI, TAU},
-        INFINITY,
-    },
-    fs::File,
-    io::{self, BufWriter},
+    f32::consts::{PI, TAU},
+    io::{self},
 };
 
-use image::ImageError;
 use indicatif::ProgressBar;
 use lib_rs::{
-    color::{self, mix, rgba, Color},
+    color::{rgba, Color},
     geometry::{AxisAlignedBox, Circle, Parallelogram, Sphere},
     linear_algebra::{
-        vector::{cross, dot, vec3},
+        vector::{dot, vec3},
         Vector3,
     },
     ray::{HitRecord, Hitable, Ray},
 };
-use rand::{rngs::SmallRng, Rng, SeedableRng};
+use rand::{Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
 
 use crate::{camera::Camera, scene::Scene};
 
-pub fn random_vec3(rng: &mut rand::rngs::SmallRng) -> Vector3 {
+pub fn random_vec3(rng: &mut impl Rng) -> Vector3 {
     vec3(
         rng.random_range(-1.0..=1.0),
         rng.random_range(-1.0..=1.0),
         rng.random_range(-1.0..=1.0),
     )
 }
-pub fn random_vec3_on_unit_sphere(rng: &mut rand::rngs::SmallRng) -> Vector3 {
+pub fn random_vec3_on_unit_sphere(rng: &mut impl Rng) -> Vector3 {
     let theta = rng.random_range(0.0..=TAU);
     let phi = rng.random_range(0.0..PI);
     let sin_phi = phi.sin();
 
     vec3(sin_phi * theta.cos(), sin_phi * theta.sin(), phi.cos())
 }
+
 // pub fn random_vec3_in_unit_sphere(rng:&mut rand::rngs::ThreadRng)->Vector3{
 //    loop {
 //         let p = random_vec3(rng);
@@ -46,14 +42,14 @@ pub fn random_vec3_on_unit_sphere(rng: &mut rand::rngs::SmallRng) -> Vector3 {
 //         }
 //     }
 // }
-pub fn random_vec3_min_max(rng: &mut rand::rngs::SmallRng, min: f32, max: f32) -> Vector3 {
+pub fn _random_vec3_min_max(rng: &mut impl Rng, min: f32, max: f32) -> Vector3 {
     vec3(
         rng.random_range(min..max),
         rng.random_range(min..max),
         rng.random_range(min..max),
     )
 }
-pub fn random_vec3_on_semisphere(rng: &mut rand::rngs::SmallRng, normal: Vector3) -> Vector3 {
+pub fn _random_vec3_on_semisphere(rng: &mut impl Rng, normal: Vector3) -> Vector3 {
     let dir = random_vec3(rng).normalize();
     if dot(dir, normal) >= 0.0 {
         dir
@@ -66,7 +62,6 @@ pub struct Renderer<'a> {
     camera: &'a Camera,
     scene: &'a Scene,
     samples: u32,
-    light_direction: Vector3,
     background: Color,
 }
 impl<'a> Renderer<'a> {
@@ -75,13 +70,12 @@ impl<'a> Renderer<'a> {
             camera,
             scene,
             samples,
-            light_direction: vec3(1.0, 1.0, 1.0).normalize(),
             background: Color::BLACK,
         }
     }
-    pub fn ray_color(&self, ray: Ray, max_depth: u32, rng: &mut rand::rngs::SmallRng) -> Color {
+    pub fn ray_color(&self, ray: Ray, max_depth: u32, rng: &mut impl Rng) -> Color {
         if max_depth == 0 {
-            return rgba(0.0, 0.0, 0.0, 1.0);
+            return self.background;
         }
         if let Some((record, material)) = self.scene.ray_cast(ray) {
             const DEBUG_NORMAL: bool = false;
@@ -95,6 +89,11 @@ impl<'a> Renderer<'a> {
                 let emmision_color = material.emit();
                 // let n = record.normal;
                 // rgba(n.x+1.0,n.y+1.0,n.z+1.0,2.0)*0.5
+                // let p = (0.299 * attenuation.r + 0.587 * attenuation.g + 0.114 * attenuation.b)
+                //     .clamp(0.1, 1.0);
+                // if rng.random::<f32>() > p {
+                //     return self.background;
+                // }
                 let scatter_color = if scatter {
                     self.ray_color(ray_out, max_depth - 1, rng) * attenuation
                 } else {
@@ -106,7 +105,7 @@ impl<'a> Renderer<'a> {
             color.a = 1.0;
             color
         } else {
-            Color::BLACK
+            self.background
         }
     }
     pub fn render(&self) -> Vec<Color> {
@@ -125,11 +124,9 @@ impl<'a> Renderer<'a> {
                 let mut rng = rand::rngs::SmallRng::from_os_rng();
 
                 let accu_color: Color = (0..self.samples)
-                    .into_iter()
                     .map(|_| {
                         let ray = self.camera.get_ray_at(i, j, &mut rng);
-                        let color = self.ray_color(ray, 10, &mut rng);
-                        color
+                        self.ray_color(ray, 10, &mut rng)
                     })
                     .sum::<Color>()
                     / self.samples as f32;
@@ -176,12 +173,7 @@ pub enum MaterialKind {
     DiffuseLight,
 }
 impl MaterialKind {
-    pub fn scatter(
-        &self,
-        ray_in: &Ray,
-        hit_record: &HitRecord,
-        rng: &mut rand::rngs::SmallRng,
-    ) -> (bool, Ray) {
+    pub fn scatter(&self, ray_in: &Ray, hit_record: &HitRecord, rng: &mut impl Rng) -> (bool, Ray) {
         let (scattered, dir) = match self {
             MaterialKind::Lambertian => (
                 true,
@@ -202,7 +194,7 @@ impl MaterialKind {
                 let cos_theta = dot(-ray_in.direction, hit_record.normal).min(1.0);
                 let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
                 let direction = if refraction_ratio * sin_theta > 1.0
-                    || reflectance(cos_theta, refraction_ratio) > rng.gen()
+                    || reflectance(cos_theta, refraction_ratio) > rng.random()
                 {
                     ray_in.direction.reflect(hit_record.normal)
                 } else {
@@ -234,7 +226,7 @@ impl Material {
         &self,
         ray_in: &Ray,
         hit_record: &HitRecord,
-        rng: &mut rand::rngs::SmallRng,
+        rng: &mut impl Rng,
     ) -> (bool, Ray, Color) {
         let (scatter, mut ray_out) = self.kind.scatter(ray_in, hit_record, rng);
         let ray_out_dir = ray_out.direction;

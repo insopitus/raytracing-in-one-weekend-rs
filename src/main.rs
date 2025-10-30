@@ -1,22 +1,12 @@
-use std::{
-    fs::File,
-    io::BufWriter,
-    thread,
-    time::{Duration, Instant},
-};
+use std::{fs::File, io::BufWriter, time::Instant};
 
-use lib_rs::{
-    color::{rgba, Color},
-    geometry::{self, AxisAlignedBox, Parallelogram, Sphere},
-    linear_algebra::vector::vec3,
-};
-use renderer::{Material, MaterialKind, Renderer};
-use serde::{Deserialize, Serialize};
+use lib_rs::linear_algebra::vector::vec3;
+use renderer::{Material, Renderer};
+use serde::Deserialize;
 
 use crate::{camera::Camera, renderer::Geometry, scene::Scene};
 
 mod camera;
-mod parser;
 mod renderer;
 mod scene;
 #[derive(Deserialize)]
@@ -40,10 +30,7 @@ struct SceneConfig {
 }
 
 fn main() {
-    let scene_config_path = std::env::args()
-        .skip(1)
-        .next()
-        .expect("scene desc is needed.");
+    let scene_config_path = std::env::args().nth(1).expect("scene desc is needed.");
     let scene_config: SceneConfig =
         serde_json::from_str(&std::fs::read_to_string(scene_config_path).unwrap()).unwrap();
     let mut camera = Camera::new(

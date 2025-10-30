@@ -20,8 +20,6 @@ pub struct Camera {
     pixel_0_loc: Vector3,
     // vertical field of view in degrees
     fov: f32,
-    /// near plane
-    viewport_size: (f32, f32),
 }
 impl Camera {
     pub fn new(width: u32, height: u32, fov: f32) -> Self {
@@ -30,7 +28,7 @@ impl Camera {
         let view_dir = vec3(0.0, 0.0, -1.0);
 
         // near plane
-        let (pixel_0_loc, pixel_delta_u, pixel_delta_v, viewport_size) =
+        let (pixel_0_loc, pixel_delta_u, pixel_delta_v, _viewport_size) =
             Self::calc_near_plane_values(center, view_dir, aspect_ratio, fov, (width, height));
         Self {
             aspect_ratio,
@@ -39,7 +37,6 @@ impl Camera {
             pixel_0_loc,
             pixel_delta_u,
             pixel_delta_v,
-            viewport_size,
             fov,
         }
     }
