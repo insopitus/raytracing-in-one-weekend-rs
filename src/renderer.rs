@@ -89,13 +89,13 @@ impl<'a> Renderer<'a> {
                 let emmision_color = material.emit();
                 // let n = record.normal;
                 // rgba(n.x+1.0,n.y+1.0,n.z+1.0,2.0)*0.5
-                // let p = (0.299 * attenuation.r + 0.587 * attenuation.g + 0.114 * attenuation.b)
-                //     .clamp(0.1, 1.0);
-                // if rng.random::<f32>() > p {
-                //     return self.background;
-                // }
+                let p = (0.299 * attenuation.r + 0.587 * attenuation.g + 0.114 * attenuation.b)
+                    .clamp(0.1, 1.0);
+                if rng.random::<f32>() > p {
+                    return self.background;
+                }
                 let scatter_color = if scatter {
-                    self.ray_color(ray_out, max_depth - 1, rng) * attenuation
+                    self.ray_color(ray_out, max_depth - 1, rng) * attenuation / p
                 } else {
                     self.background
                 };
