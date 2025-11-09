@@ -6,10 +6,10 @@ use std::{
 use indicatif::ProgressBar;
 use lib_rs::{
     color::{rgba, Color},
-    geometry::{AxisAlignedBox, Circle, Parallelogram, Sphere},
+    geometry::{Box, Circle, Quad, Sphere},
     linear_algebra::{
         vector::{dot, vec3},
-        Vector3,
+        Transform, Vector3,
     },
     ray::{HitRecord, Hitable, Ray},
 };
@@ -246,17 +246,22 @@ impl Material {
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Geometry {
     Sphere(Sphere),
-    Parallelogram(Parallelogram),
-    AxisAlignedBox(AxisAlignedBox),
+    Quad(Quad),
+    Box(Box),
     Circle(Circle),
 }
 impl Geometry {
-    pub fn hit(&self, ray: Ray, range: std::ops::Range<f32>) -> Option<HitRecord> {
+    pub fn hit(
+        &self,
+        ray: Ray,
+        range: std::ops::Range<f32>,
+        transform: Option<Transform>,
+    ) -> Option<HitRecord> {
         match self {
-            Geometry::Sphere(sphere) => sphere.hit(ray, range),
-            Geometry::Parallelogram(parallelogram) => parallelogram.hit(ray, range),
-            Geometry::AxisAlignedBox(aabb) => aabb.hit(ray, range),
-            Geometry::Circle(circle) => circle.hit(ray, range),
+            Geometry::Sphere(sphere) => ray.hit(sphere, range, transform),
+            Geometry::Quad(quad) => ray.hit(quad, range, transform),
+            Geometry::Box(b) => ray.hit(b, range, transform),
+            Geometry::Circle(circle) => ray.hit(circle, range, transform),
         }
     }
 }

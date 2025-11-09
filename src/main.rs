@@ -1,6 +1,6 @@
 use std::{fs::File, io::BufWriter, time::Instant};
 
-use lib_rs::linear_algebra::vector::vec3;
+use lib_rs::linear_algebra::{vector::vec3, Transform};
 use renderer::{Material, Renderer};
 use serde::Deserialize;
 
@@ -21,6 +21,7 @@ struct CameraConfig {
 struct MeshConfig {
     geometry: Geometry,
     material: Material,
+    transform: Option<Transform>,
 }
 #[derive(Deserialize)]
 struct SceneConfig {
@@ -52,7 +53,7 @@ fn main() {
         scene_config
             .scene
             .into_iter()
-            .map(|mesh| (mesh.geometry, mesh.material))
+            .map(|mesh| (mesh.geometry, mesh.material, mesh.transform))
             .collect(),
     );
 
