@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.99"
-image = { version = "0.24.9" }
+image = { version = "0.24.9",features = ["png"],default-features = false }
 indicatif = "0.17.8"
 lib-rs = { path = "./lib-rs" }
 rand = "0.9"
