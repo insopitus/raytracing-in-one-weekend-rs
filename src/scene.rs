@@ -1,4 +1,5 @@
 use lib_rs::{
+    geometry::Bvh,
     linear_algebra::Transform,
     ray::{HitRecord, Ray},
 };
@@ -8,11 +9,15 @@ use crate::renderer::{Geometry, Material};
 pub struct Scene {
     /// entity defined as geometry,material,and rotation_y(will be transform in the future)
     entities: Vec<(Geometry, Material, Option<Transform>)>,
+    bvh: Bvh,
 }
 
 impl Scene {
     pub fn _new() -> Self {
-        Self { entities: vec![] }
+        Self {
+            entities: vec![],
+            bvh: Bvh::new(),
+        }
     }
     pub fn from_list(list: Vec<(Geometry, Material, Option<Transform>)>) -> Self {
         Self { entities: list }
