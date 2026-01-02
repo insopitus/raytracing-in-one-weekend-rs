@@ -243,25 +243,3 @@ impl Material {
         self.kind.emit(self.color)
     }
 }
-#[derive(Serialize, Deserialize, Debug)]
-pub enum Geometry {
-    Sphere(Sphere),
-    Quad(Quad),
-    Box(Box),
-    Circle(Circle),
-}
-impl Geometry {
-    pub fn hit(
-        &self,
-        ray: Ray,
-        range: std::ops::Range<f32>,
-        transform: Option<Transform>,
-    ) -> Option<HitRecord> {
-        match self {
-            Geometry::Sphere(sphere) => ray.hit(sphere, range, transform),
-            Geometry::Quad(quad) => ray.hit(quad, range, transform),
-            Geometry::Box(b) => ray.hit(b, range, transform),
-            Geometry::Circle(circle) => ray.hit(circle, range, transform),
-        }
-    }
-}

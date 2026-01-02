@@ -1,9 +1,10 @@
 use lib_rs::{
+    geometry::Geometry,
     linear_algebra::Transform,
     ray::{HitRecord, Ray},
 };
 
-use crate::renderer::{Geometry, Material};
+use crate::renderer::Material;
 
 pub struct Scene {
     /// entity defined as geometry,material,and rotation_y(will be transform in the future)
